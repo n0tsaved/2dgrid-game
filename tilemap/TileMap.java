@@ -10,8 +10,8 @@ public class TileMap implements MatrixGraph {
 
     public TileMap(int n) {
         grid = new byte[n][n];
-        for (int i = 0; i < GameMap.WIDTH; i++)
-            for (int j = 0; j < GameMap.HEIGHT; j++)
+        for (int i = 0; i < n; i++)
+            for (int j = 0; j < n; j++)
                 grid[i][j] = 0;
     }
 

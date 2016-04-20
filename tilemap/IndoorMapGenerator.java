@@ -61,6 +61,6 @@ public class IndoorMapGenerator extends MapGenerator{
     private void setAllBlocked(Tile[][] map) {
         for(int i=0; i<GameMap.WIDTH;i++)
             for(int j=0; j<GameMap.HEIGHT; j++)
-                map[i][j].isBlocked=true;
+                map[i][j]=new Tile(true);
     }
 }

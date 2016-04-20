@@ -9,6 +9,5 @@ public interface MatrixGraph {
     void removeEdge(int i, int j);
     boolean hasEdge(int i, int j);
 
-    void paint(Graphics2D g);
 
 }

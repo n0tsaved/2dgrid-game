@@ -14,7 +14,10 @@ public class GameMap {
 
 
     /** The actual data for our map */
+    private Tile[][] data;
+
     private TileMap grid;
+
     private ArrayList<Room> rooms;
     private ArrayList<Obstacle> obstcls;
 
@@ -22,11 +25,13 @@ public class GameMap {
      * Create a new map with some default contents
      */
     public GameMap() {
-        grid= new TileMap();
+        data=new Tile[WIDTH][HEIGHT];
+        grid= new TileMap(WIDTH*HEIGHT);
         rooms=new ArrayList<>();
         obstcls=new ArrayList<>();
         //IndoorMapGenerator mgnrt = new IndoorMapGenerator();
         Game.mapGnrtr.generate(this);
+        generateGraph();
         // create some default map data - it would be way
         // cooler to load this from a file and maybe provide
         // a map editor of some sort, but since we're just doing
@@ -57,6 +62,34 @@ public class GameMap {
         data[11][7] = CLEAR;*/
     }
 
+    private void generateGraph() {
+        for(int i=0;i<Game.WIDTH;i++)
+            for(int j=0;j<Game.HEIGHT;j++) {
+                if (blocked(i, j)) continue;
+                if(i>0 && !blocked(i-1, j)) //add sx
+                    grid.addEdge(toNode(i,j), toNode(i-1,j));
+                if(j>0 && !blocked(i,j-1)) //add up
+                    grid.addEdge(toNode(i,j),toNode(i,j-1));
+                if(j>0&&i>0&&!blocked(i-1,j-1)) //add sxup
+                    grid.addEdge(toNode(i,j), toNode(i-1,j-1));
+                if(j>0&&i<WIDTH&&!blocked(i+1,j-1)) // add dxup
+                    grid.addEdge(toNode(i,j), toNode(i+1,j-1));
+                if(i<WIDTH&&!blocked(i+1,j)) //add dx
+                    grid.addEdge(toNode(i,j), toNode(i+1,j));
+                if(i<WIDTH&&j<HEIGHT&&!blocked(i+1,j+1)) //add dxdown
+                    grid.addEdge(toNode(i,j), toNode(i+1,j+1));
+                if(j<HEIGHT&&!blocked(i,j+1)) //add down
+                    grid.addEdge(toNode(i,j), toNode(i,j+1));
+                if(j<HEIGHT&&i>0&&!blocked(i-1,j+1)) //add sxdown
+                    grid.addEdge(toNode(i,j), toNode(i-1,j+1));
+            }
+
+    }
+
+    private int toNode(int x, int y) {
+        return WIDTH*y+x;
+    }
+
     /**
      * Render the map to the graphics context provided. The rendering
      * is just simple fill rectangles
@@ -66,12 +99,12 @@ public class GameMap {
     public void paint(Graphics2D g) {
         // loop through all the tiles in the map rendering them
         // based on whether they block or not
-        /* for (int x = 0; x < WIDTH; x++) {
+        for (int x = 0; x < WIDTH; x++) {
             for (int y = 0; y < HEIGHT; y++) {
                 data[x][y].paint(g, x, y);
             }
-        } */
-        grid.paint(g);
+        }
+        //grid.paint(g);
     }
 
     /**
@@ -86,8 +119,8 @@ public class GameMap {
     public boolean blocked(int x, int y) {
         // look up the right cell (based on simply rounding the floating
         // values) and check the value
-        if(x>= 0 && y >=0 && x<WIDTH && y<HEIGHT)
-            return !grid.hasEdge(x,y);
+        if(x>= 0 && y >=0 && x<WIDTH && y<HEIGHT) return data[x][y].isBlocked==true;
+            //return !grid.isTraversable(x,y);
         else return false;
 
     }
@@ -97,12 +130,16 @@ public class GameMap {
         Room room=(Room) o;
         for (Room r : rooms)
             if(room.intersect(r)) return false;
-        grid.setTraversable(room);
+        //grid.setTraversable(room);
+        for (int i = room.x; i < room.x + room.width; i++)
+            for (int j = room.y; j < room.y + room.height; j++) {
+                data[i][j].isBlocked = false;
+            }
         return rooms.add(room);
     }
 
     public Tile[][] getData(){
-        return grid.getData();
+        return data;
     }
 
     public ArrayList<Room> getRooms(){
@@ -115,7 +152,11 @@ public class GameMap {
         Obstacle obst = (Obstacle) o;
         for(Obstacle x : obstcls)
             if(obst.intersect(x)) return false;
-        grid.setNotTraversable(obst);
+        //grid.setNotTraversable(obst);
+        for (int i = obst.x; i < obst.x + obst.width; i++)
+            for (int j = obst.y; j < obst.y + obst.height; j++) {
+                data[i][j].isBlocked = false;
+            }
         return obstcls.add(obst);
     }
 }

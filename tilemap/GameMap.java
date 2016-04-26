@@ -16,7 +16,7 @@ public class GameMap {
     /** The actual data for our map */
     private Tile[][] data;
 
-    private TileMap grid;
+    private AdjacencyMatrix graph;
 
     private ArrayList<Room> rooms;
     private ArrayList<Obstacle> obstcls;
@@ -26,7 +26,7 @@ public class GameMap {
      */
     public GameMap() {
         data=new Tile[WIDTH][HEIGHT];
-        grid= new TileMap(WIDTH*HEIGHT);
+        graph= new AdjacencyMatrix(WIDTH*HEIGHT);
         rooms=new ArrayList<>();
         obstcls=new ArrayList<>();
         //IndoorMapGenerator mgnrt = new IndoorMapGenerator();
@@ -67,21 +67,21 @@ public class GameMap {
             for(int j=0;j<Game.HEIGHT;j++) {
                 if (blocked(i, j)) continue;
                 if(i>0 && !blocked(i-1, j)) //add sx
-                    grid.addEdge(toNode(i,j), toNode(i-1,j));
+                    graph.addEdge(toNode(i,j), toNode(i-1,j));
                 if(j>0 && !blocked(i,j-1)) //add up
-                    grid.addEdge(toNode(i,j),toNode(i,j-1));
+                    graph.addEdge(toNode(i,j),toNode(i,j-1));
                 if(j>0&&i>0&&!blocked(i-1,j-1)) //add sxup
-                    grid.addEdge(toNode(i,j), toNode(i-1,j-1));
+                    graph.addEdge(toNode(i,j), toNode(i-1,j-1));
                 if(j>0&&i<WIDTH&&!blocked(i+1,j-1)) // add dxup
-                    grid.addEdge(toNode(i,j), toNode(i+1,j-1));
+                    graph.addEdge(toNode(i,j), toNode(i+1,j-1));
                 if(i<WIDTH&&!blocked(i+1,j)) //add dx
-                    grid.addEdge(toNode(i,j), toNode(i+1,j));
+                    graph.addEdge(toNode(i,j), toNode(i+1,j));
                 if(i<WIDTH&&j<HEIGHT&&!blocked(i+1,j+1)) //add dxdown
-                    grid.addEdge(toNode(i,j), toNode(i+1,j+1));
+                    graph.addEdge(toNode(i,j), toNode(i+1,j+1));
                 if(j<HEIGHT&&!blocked(i,j+1)) //add down
-                    grid.addEdge(toNode(i,j), toNode(i,j+1));
+                    graph.addEdge(toNode(i,j), toNode(i,j+1));
                 if(j<HEIGHT&&i>0&&!blocked(i-1,j+1)) //add sxdown
-                    grid.addEdge(toNode(i,j), toNode(i-1,j+1));
+                    graph.addEdge(toNode(i,j), toNode(i-1,j+1));
             }
 
     }

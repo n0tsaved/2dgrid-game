@@ -73,7 +73,7 @@ public class GameController implements KeyListener{
         // based on the keys multiplied by the amount of time thats
         // passed
         if ((dx != 0 ) || (dy != 0 )) {
-            player.move(  (int) (dx*delta*0.3f),(int) (dy*delta*0.3f));
+            player.move(  (int) (dx*delta*0.5f),(int) (dy*delta*0.5f));
         }
         /*if(dx!=0||dy!=0){
             player.move(dx,dy);

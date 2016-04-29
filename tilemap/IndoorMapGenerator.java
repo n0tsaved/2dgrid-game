@@ -1,66 +1,52 @@
 package tilemap;
 
-import java.util.List;
 import java.util.Random;
 
 /**
+ * Created by merda on 29/04/16.
  */
-public class IndoorMapGenerator extends MapGenerator{
+public class IndoorMapGenerator extends MapGenerator {
     private final int ROOM_MAX_SIZE=15;
-    private final int ROOM_MIN_SIZE=6;
+    private final int ROOM_MIN_SIZE=12;
     private final int MAX_ROOMS=15;
+    private static Random r= new Random();
+    @Override
     public void generate(GameMap map) {
-        setAllBlocked(map.getData());
-        placeRooms(map);
+        r.setSeed(System.currentTimeMillis());
+        setAllClear(map.getData());
+        splitArea(map.getData(), GameMap.WIDTH, GameMap.HEIGHT, 0,0, new Random().nextBoolean());
+
     }
 
-    private void placeRooms(GameMap map) {
-        Random r=new Random();
-        for(int i=0;i<MAX_ROOMS;i++) {
-            int w = r.nextInt((ROOM_MAX_SIZE - ROOM_MIN_SIZE) + 1)+ROOM_MIN_SIZE;
-            int h = r.nextInt((ROOM_MAX_SIZE - ROOM_MIN_SIZE) + 1) + ROOM_MIN_SIZE;
-            int x = r.nextInt(GameMap.WIDTH -w -1)+1;
-            int y = r.nextInt(GameMap.HEIGHT - h -1)+1;
-            map.addRoom(new Room(x,y,w,h));
+    public void splitArea(Tile[][] m, int width, int height, int x_offset, int y_offset, Boolean vert){
+        if(width*height<Math.pow(ROOM_MIN_SIZE,2 ) || width<12 || height < 10) return;
+        if(vert){
+            // split vertically
+            int new_width=r.nextInt(((width/4)*3)-((width/4)+1))+(width/4);
+            int x_start_wall=new_width+x_offset; //width/2 +x_offset;
+
+            splitArea(m,new_width, height,x_offset, y_offset, !vert); //split sx area
+            splitArea(m,width-new_width, height,x_start_wall+1, y_offset, !vert); //split dx area
+            for(int j=y_offset; j<GameMap.HEIGHT && !m[x_start_wall][j].isBlocked; j++)
+                m[x_start_wall][j].isBlocked=true;
+            m[x_start_wall][r.nextInt(height/2)+y_offset].isBlocked=false;
+        }else{
+            //split horizontally
+            int new_height=r.nextInt(((3/4)*height)-((1/4)*height)+1)+(height/4);
+            int y_start_wall=new_height + y_offset;
+
+            splitArea(m, width,new_height, x_offset, y_offset, !vert); //split up area
+            splitArea(m, width, height-new_height, x_offset, y_start_wall+1, !vert); //split down area;
+            for(int i=x_offset; i<GameMap.WIDTH && !m[i][y_start_wall].isBlocked; i++)
+                m[i][y_start_wall].isBlocked=true;
+            m[r.nextInt(width/2)+x_offset][y_start_wall].isBlocked=false;
         }
-        List<Room> rooms = map.getRooms();
-        createTunnels(rooms, map.getData());
+
     }
 
-    private void createTunnels(List<Room> rooms, Tile[][] map) {
-        Room prev = null;
-        for(Room r : rooms){
-            if(rooms.indexOf(r)>0) {
-                prev = rooms.get(rooms.indexOf(r) - 1);
-                if (new Random().nextInt(101) > 50) {
-                    create_h_tunnel(map, prev.center()[0], r.center()[0], prev.center()[1]);
-                    create_v_tunnel(map, prev.center()[1], r.center()[1], r.center()[0]);
-                } else {
-                    create_v_tunnel(map, prev.center()[1], r.center()[1], prev.center()[0]);
-                    create_h_tunnel(map, prev.center()[0], r.center()[0], r.center()[1]);
-
-                }
-            }
-        }
-    }
-
-    private void create_h_tunnel(Tile[][] map, int x1, int x2, int y) {
-        for(int i=Math.min(x1,x2); i<=Math.max(x1,x2);i++)
-            map[i][y].isBlocked=false;
-        /*for x in range(min(x1, x2), max(x1, x2) + 1):
-        map[x][y].blocked = False
-        map[x][y].block_sight = False*/
-    }
-
-    private void create_v_tunnel(Tile[][] map, int y1, int y2, int x) {
-        for(int j=Math.min(y1,y2);j<Math.max(y1,y2);j++)
-            map[x][j].isBlocked=false;
-    }
-
-
-    private void setAllBlocked(Tile[][] map) {
-        for(int i=0; i<GameMap.WIDTH;i++)
-            for(int j=0; j<GameMap.HEIGHT; j++)
-                map[i][j]=new Tile(true);
+    public void setAllClear(Tile[][] data) {
+        for(int i=0;i<GameMap.WIDTH;i++)
+            for(int j=0; j<GameMap.HEIGHT;j++)
+                data[i][j]=new Tile(false);
     }
 }

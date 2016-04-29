@@ -1,7 +1,7 @@
 package tilemap;
 
 public class Room implements TileMapElement{
-    public int x,y,width,height;
+    public int x,y,width,height, area;
 
 
     public Room(int x,int y, int width, int height){
@@ -9,6 +9,7 @@ public class Room implements TileMapElement{
         this.y=y;
         this.width=width;
         this.height=height;
+        this.area=width*height;
     }
 
     public int[] center(){

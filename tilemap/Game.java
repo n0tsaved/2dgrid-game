@@ -1,17 +1,9 @@
 package tilemap;
 
 import java.awt.*;
-import java.awt.event.ActionEvent;
-import java.awt.event.ActionListener;
 import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
 import java.awt.image.BufferStrategy;
-import java.io.IOException;
-import java.net.URL;
-import java.util.Random;
-
-import javax.imageio.ImageIO;
-import javax.swing.*;
 
 public class Game extends Canvas{
     private long lastFpsTime;
@@ -82,7 +74,7 @@ public class Game extends Canvas{
 
         // create our game objects, a gameMap for the player to wander around
         // and an entity to represent out player
-        if(mapGnrtr.getClass() == IndoorMapGenerator.class) {
+        if(mapGnrtr.getClass() == DungeonMapGenerator.class) {
             int[] spawnCoords = gameMap.getRooms().get(0).center();
             player = new Entity("@", gameMap, spawnCoords[0], spawnCoords[1]);
         }else player = new Entity("@", gameMap, 3, 3);

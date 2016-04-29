@@ -29,7 +29,7 @@ public class GameMap {
         graph= new AdjacencyMatrix(WIDTH*HEIGHT);
         rooms=new ArrayList<>();
         obstcls=new ArrayList<>();
-        //IndoorMapGenerator mgnrt = new IndoorMapGenerator();
+        //DungeonMapGenerator mgnrt = new DungeonMapGenerator();
         Game.mapGnrtr.generate(this);
         generateGraph();
         // create some default map data - it would be way
@@ -155,7 +155,7 @@ public class GameMap {
         //grid.setNotTraversable(obst);
         for (int i = obst.x; i < obst.x + obst.width; i++)
             for (int j = obst.y; j < obst.y + obst.height; j++) {
-                data[i][j].isBlocked = false;
+                data[i][j].isBlocked = true;
             }
         return obstcls.add(obst);
     }

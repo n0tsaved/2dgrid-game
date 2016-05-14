@@ -124,7 +124,7 @@ public class Game extends Canvas{
             fps++;
             if (lastFpsTime >= 1000000000)
             {
-                System.out.println("(FPS: "+fps+")");
+                //System.out.println("(FPS: "+fps+")");
                 lastFpsTime = 0;
                 fps = 0;
             }

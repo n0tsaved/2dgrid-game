@@ -1,7 +1,16 @@
 package tilemap;
 
-import java.awt.Graphics2D;
+import java.awt.*;
+import java.io.*;
 import java.util.ArrayList;
+import java.util.HashSet;
+import java.util.Set;
+
+import org.jgrapht.*;
+import org.jgrapht.generate.*;
+import org.jgrapht.graph.*;
+import org.jgrapht.traverse.*;
+import org.jgrapht.ext.*;
 
 public class GameMap {
 
@@ -20,6 +29,7 @@ public class GameMap {
 
     private ArrayList<Room> rooms;
     private ArrayList<Obstacle> obstcls;
+    private SimpleWeightedGraph<Integer, DefaultWeightedEdge> completeGraph;
 
     /**
      * Create a new map with some default contents
@@ -32,6 +42,29 @@ public class GameMap {
         //DungeonMapGenerator mgnrt = new DungeonMapGenerator();
         Game.mapGnrtr.generate(this);
         generateGraph();
+
+        completeGraph = new SimpleWeightedGraph<Integer, DefaultWeightedEdge>(DefaultWeightedEdge.class);
+        EmptyGraphGenerator<Integer, DefaultWeightedEdge> graphGenerator =
+                new EmptyGraphGenerator<>(HEIGHT*WIDTH);
+        /*VertexFactory<Integer> vFactory =
+                new ClassBasedVertexFactory<Integer>(Integer.class);
+        graphGenerator.generateGraph(completeGraph, vFactory, null);
+        Set<Integer> vertices = new HashSet<Integer>();
+        vertices.addAll(completeGraph.vertexSet());
+        Integer counter = 0;
+        for (Integer vertex : vertices) {
+            replaceVertex(vertex, counter++);
+        }*/
+        for(int i=0; i< WIDTH*HEIGHT; i++)
+            completeGraph.addVertex(new Integer(i));
+        generateCompleteGraph();
+        MatrixExporter mtrxExp = new MatrixExporter();
+        try {
+            mtrxExp.exportAdjacencyMatrix(new PrintWriter(new BufferedWriter(new FileWriter("adj.txt"))), completeGraph);
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    //System.out.println(completeGraph.toString());
         // create some default map data - it would be way
         // cooler to load this from a file and maybe provide
         // a map editor of some sort, but since we're just doing
@@ -63,8 +96,8 @@ public class GameMap {
     }
 
     private void generateGraph() {
-        for(int i=0;i<Game.WIDTH;i++)
-            for(int j=0;j<Game.HEIGHT;j++) {
+        for(int i=0;i<WIDTH;i++)
+            for(int j=0;j<HEIGHT;j++) {
                 if (blocked(i, j)) continue;
                 if(i>0 && !blocked(i-1, j)) //add sx
                     graph.addEdge(toNode(i,j), toNode(i-1,j));
@@ -85,6 +118,62 @@ public class GameMap {
             }
 
     }
+
+    private void generateCompleteGraph() {
+        for(int i=0;i<WIDTH;i++) {
+            for (int j = 0; j < HEIGHT; j++) {
+                //System.out.println("pivot (" + i + "," + j + ")");
+                if (blocked(i, j)) continue;
+                if (!blocked(i - 1, j)) //add sx
+                    completeGraph.addEdge(toNode(i, j), toNode(i - 1, j), new DefaultWeightedEdge());
+                if (!blocked(i, j - 1)) //add up
+                    completeGraph.addEdge(toNode(i, j), toNode(i, j - 1), new DefaultWeightedEdge());
+                if (!blocked(i - 1, j - 1)) //add sxup
+                    completeGraph.addEdge(toNode(i, j), toNode(i - 1, j - 1), new DefaultWeightedEdge());
+                if (!blocked(i + 1, j - 1)) // add dxup
+                    completeGraph.addEdge(toNode(i, j), toNode(i + 1, j - 1), new DefaultWeightedEdge());
+                if (!blocked(i + 1, j)) //add dx
+                    completeGraph.addEdge(toNode(i, j), toNode(i + 1, j), new DefaultWeightedEdge());
+                if (!blocked(i + 1, j + 1)) //add dxdown
+                    completeGraph.addEdge(toNode(i, j), toNode(i + 1, j + 1), new DefaultWeightedEdge());
+                if (!blocked(i, j + 1)) //add down
+                    completeGraph.addEdge(toNode(i, j), toNode(i, j + 1), new DefaultWeightedEdge());
+                if (!blocked(i - 1, j + 1)) //add sxdown
+                    completeGraph.addEdge(toNode(i, j), toNode(i - 1, j + 1), new DefaultWeightedEdge());
+            }
+        }
+
+    }
+
+    private boolean replaceVertex(Integer oldVertex, Integer newVertex)
+    {
+        if ((oldVertex == null) || (newVertex == null)) {
+            return false;
+        }
+        Set<DefaultWeightedEdge> relatedEdges = completeGraph.edgesOf(oldVertex);
+        completeGraph.addVertex(newVertex);
+
+        Integer sourceVertex;
+        Integer targetVertex;
+        for (DefaultWeightedEdge e : relatedEdges) {
+            sourceVertex = completeGraph.getEdgeSource(e);
+            targetVertex = completeGraph.getEdgeTarget(e);
+            if (sourceVertex.equals(oldVertex)
+                    && targetVertex.equals(oldVertex))
+            {
+                completeGraph.addEdge(newVertex, newVertex);
+            } else {
+                if (sourceVertex.equals(oldVertex)) {
+                    completeGraph.addEdge(newVertex, targetVertex);
+                } else {
+                    completeGraph.addEdge(sourceVertex, newVertex);
+                }
+            }
+        }
+        completeGraph.removeVertex(oldVertex);
+        return true;
+    }
+
 
     private int toNode(int x, int y) {
         return WIDTH*y+x;
@@ -119,9 +208,13 @@ public class GameMap {
     public boolean blocked(int x, int y) {
         // look up the right cell (based on simply rounding the floating
         // values) and check the value
-        if(x>= 0 && y >=0 && x<WIDTH && y<HEIGHT) return data[x][y].isBlocked==true;
+        if(x>= 0 && y >=0 && x<WIDTH && y<HEIGHT){
+            //if(data[x][y].isBlocked==true) System.out.println("("+x+","+y+") is blocked");
+            //else System.out.println("("+x+","+y+") is not blocked");
+            return data[x][y].isBlocked==true;
+        }
             //return !grid.isTraversable(x,y);
-        else return false;
+        else return true;
 
     }
 

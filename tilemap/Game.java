@@ -4,6 +4,7 @@ import java.awt.*;
 import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
 import java.awt.image.BufferStrategy;
+import java.util.LinkedList;
 
 public class Game extends Canvas{
     private long lastFpsTime;
@@ -13,12 +14,13 @@ public class Game extends Canvas{
 
     /** The gameMap our player will wander round */
     /** The player entity that will be controlled with cursors */
-    private Entity player;
+    private Player player = new Player("@");
+
+    private LinkedList<Entity> enemies = new LinkedList<>();
 
     private GameController controller;
     private int fps;
-    public static MapGenerator mapGnrtr=new IndoorMapGenerator();
-    private static final GameMap gameMap = new GameMap();
+    private GameMap gameMap = new GameMap(player, new IndoorMapGenerator());
 
     public Game() {
 
@@ -74,11 +76,18 @@ public class Game extends Canvas{
 
         // create our game objects, a gameMap for the player to wander around
         // and an entity to represent out player
-        if(mapGnrtr.getClass() == DungeonMapGenerator.class) {
-            int[] spawnCoords = gameMap.getRooms().get(0).center();
-            player = new Entity("@", gameMap, spawnCoords[0], spawnCoords[1]);
-        }else player = new Entity("@", gameMap, 3, 3);
-        controller= new GameController( player);
+        //if(mapGnrtr.getClass() == DungeonMapGenerator.class) {
+          //  int[] spawnCoords = gameMap.getRooms().get(0).center();
+            //player = new Player("@", gameMap, spawnCoords[0], spawnCoords[1]);
+
+        player.setGameMap(gameMap);
+        player.spawn();
+        controller= new GameController( this, player);
+        enemies.add(new Entity("#", gameMap));
+        enemies.add(new Entity("§", gameMap));
+        //for(Entity e : enemies)
+        //    e.spawn();
+
         frame.addKeyListener(controller);
         addKeyListener(controller);
     }
@@ -106,6 +115,8 @@ public class Game extends Canvas{
             g.translate(100,100);
             gameMap.paint(g);
             player.paint(g);
+            for(Entity e : enemies)
+                    e.paint(g);
 
             // flip the buffer so we can see the rendering
             g.dispose();
@@ -147,6 +158,16 @@ public class Game extends Canvas{
         }
     }
 
+    public void setNewGameMap(MapGenerator m){
+        gameMap=new GameMap(player, m);
+        player.setGameMap(gameMap);
+        player.spawn();
+        for(Entity e : enemies) {
+            e.setGameMap(gameMap);
+            e.spawn();
+            e.setPath();
+        }
+    }
 
     /**
      * The entry point to our example code

@@ -6,10 +6,13 @@ import java.awt.event.KeyListener;
 /**
  */
 public class GameController implements KeyListener{
-    private Entity player;
+    private Player player;
+    private Game g;
     private boolean left, right, up, down;
 
-    public GameController( Entity p) {
+    public GameController( Game g, Player p)
+    {
+        this.g=g;
         player=p;
     }
 
@@ -33,6 +36,13 @@ public class GameController implements KeyListener{
         if (e.getKeyCode() == KeyEvent.VK_UP) {
             up = true;
         }
+        if (e.getKeyCode() == KeyEvent.VK_F1)
+            g.setNewGameMap(new IndoorMapGenerator());
+        if (e.getKeyCode() == KeyEvent.VK_F2)
+            g.setNewGameMap(new OutdoorMapGenerator());
+        if (e.getKeyCode() == KeyEvent.VK_F3)
+            g.setNewGameMap(new DungeonMapGenerator());
+
     }
 
     @Override

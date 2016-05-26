@@ -1,8 +1,19 @@
 package tilemap;
 
+import org.jgrapht.GraphPath;
+import org.jgrapht.Graphs;
+import org.jgrapht.alg.AStarShortestPath;
+import org.jgrapht.alg.DijkstraShortestPath;
+import org.jgrapht.alg.interfaces.AStarAdmissibleHeuristic;
+import org.jgrapht.graph.DefaultWeightedEdge;
+
 import java.awt.*;
+import java.util.Iterator;
+import java.util.Random;
 
-
+/**
+ * Created by merda on 25/05/16.
+ */
 public class Entity {
     /** The x position of this entity in terms of grid cells */
     private int x;
@@ -12,94 +23,53 @@ public class Entity {
     private String image;
     /** The gameMap which this entity is wandering around */
     private GameMap gameMap;
-    /** The angle to draw this entity at */
-    //private float ang;
-    /** The size of this entity, this is used to calculate collisions with walls */
-    //private float size = 0.3f;
+    private static Random r = new Random(GameMap.WIDTH*GameMap.HEIGHT);
+    private AStarShortestPath<Integer, DefaultWeightedEdge> astarPathFind;
+    private DijkstraShortestPath<Integer, DefaultWeightedEdge> dijkstraPathFind;
+    private GraphPath<Integer, DefaultWeightedEdge> path;
 
-    /**
-     * Create a new entity in the game
-     *
-     * @param image The image to represent this entity (needs to be 32x32)
-     * @param gameMap The gameMap this entity is going to wander around
-     * @param x The initial x position of this entity in grid cells
-     * @param y The initial y position of this entity in grid cells
-     */
-    public Entity(String image, GameMap gameMap, int x, int y) {
-        this.image = image;
-        this.gameMap = gameMap;
-        this.x = x;
-        this.y = y;
+    public Entity(String s, GameMap m){
+        image=s;
+        gameMap=m;
+        spawn();
+        //pathfinder=new AStarShortestPath<>(gameMap.getGraph());
+        //path=pathfinder.getShortestPath(y*GameMap.WIDTH+x, gameMap.getPlayerNode(), new ManhattanDistance());
+        dijkstraPathFind = new DijkstraShortestPath<>(gameMap.getGraph(),
+                y*GameMap.WIDTH+x, gameMap.getPlayerNode());
+        //System.out.println(ptfnd.getPath().getEdgeList().toString());
+        Tile[][] map = gameMap.getData();
+        path= dijkstraPathFind.getPath();
+        if(path==null) return;
+        for(Integer i : Graphs.getPathVertexList(path))
+            map[i%gameMap.WIDTH][i/gameMap.WIDTH].isPath=true;
+
+        //System.out.println(path.toString());
     }
 
-    /**
-     * Move this entity a given amount. This may or may not succeed depending
-     * on collisions
-     *
-     * @param dx The amount to move on the x axis
-     * @param dy The amount to move on the y axis
-     * @return True if the move succeeded
-     */
-    public boolean move(int dx, int dy) {
-        // work out what the new position of this entity will be
-        int nx = x + dx;
-        int ny = y + dy;
+    public void setPath(){
 
-        // check if the new position of the entity collides with
-        // anything
-        if (validLocation(nx, ny)) {
-            // if it doesn't then change our position to the new position
-            x = nx;
-            y = ny;
-//System.out.println("Position: "+x+","+y+"blocked: "+gameMap.getData()[x][y].isBlocked);
-            // and calculate the angle we're facing based on our last move
-            //ang = (float) (Math.atan2(dy, dx) - (Math.PI / 2));
-            return true;
-        }
-
-        // if it wasn't a valid move don't do anything apart from
-        // tell the caller
-        return false;
+        //astarPathFind=new AStarShortestPath<>(gameMap.getGraph());
+        //path=astarPathFind.getShortestPath(y*GameMap.WIDTH+x, gameMap.getPlayerNode(), new ManhattanDistance());
+        //System.out.println(path.toString());
+        path=new DijkstraShortestPath<Integer, DefaultWeightedEdge>(gameMap.getGraph(),
+                y*GameMap.WIDTH+x, gameMap.getPlayerNode()).getPath();
+        Tile[][] map = gameMap.getData();
+        if(path == null) return;
+        for(Integer i : Graphs.getPathVertexList(path))
+            map[i%gameMap.WIDTH][i/gameMap.WIDTH].isPath=true;
     }
 
-    /**
-     * Check if the entity would be at a valid location if its position
-     * was as specified
-     *
-     * @param nx The potential x position for the entity
-     * @param ny The potential y position for the entity
-     * @return True if the new position specified would be valid
-     */
-    public boolean validLocation(int nx, int ny) {
-        // here we're going to check some points at the corners of
-        // the player to see whether we're at an invalid location
-        // if any of them are blocked then the location specified
-        // isn't valid
-        if (gameMap.blocked(nx, ny)) {
-            return false;
-        }
-        if(nx>=GameMap.WIDTH || ny >GameMap.HEIGHT || nx<0 || ny<=0)
-            return false;
-        /*if (gameMap.blocked(nx + size, ny - size)) {
-            return false;
-        }
-        if (gameMap.blocked(nx - size, ny + size)) {
-            return false;
-        }
-        if (gameMap.blocked(nx + size, ny + size)) {
-            return false;
-        }*/
-
-        // if all the points checked are unblocked then we're in an ok
-        // location
-        return true;
+    public void spawn(){
+        int node = r.nextInt();
+        while(gameMap.blocked(node%gameMap.WIDTH, node/gameMap.WIDTH))
+            node=r.nextInt();
+        this.x=node%gameMap.WIDTH;
+        this.y=node/gameMap.WIDTH;
+        gameMap.getData()[x][y].isStart=true;
     }
-
-    /**
-     * Draw this entity to the graphics context provided.
-     *
-     * @param g The graphics context to which the entity should be drawn
-     */
+    public void setGameMap(GameMap m){
+        gameMap=m;
+    }
     public void paint(Graphics2D g) {
         // work out the screen position of the entity based on the
         // x/y position and the size that tiles are being rendered at. So
@@ -107,7 +77,7 @@ public class Entity {
         // at 15,15.
         int xp = (int) (Tile.TILE_SIZE * x);
         int yp = (int) (Tile.TILE_SIZE * y);
-        g.setColor(Color.RED);
+        g.setColor(Color.BLUE);
 
         // rotate the sprite based on the current angle and then
         // draw it
@@ -116,5 +86,18 @@ public class Entity {
 
         //g.drawImage(image, (int) (xp - 16), (int) (yp - 16), null);
         //g.rotate(-ang, xp, yp);
+    }
+
+    private class ManhattanDistance implements AStarAdmissibleHeuristic<Integer>{
+
+        @Override
+        public double getCostEstimate(Integer sourceVertex, Integer targetVertex) {
+            int sourceX, sourceY, targetX, targetY;
+            sourceX=sourceVertex%GameMap.WIDTH;
+            sourceY=sourceVertex/GameMap.WIDTH;
+            targetX=targetVertex%GameMap.WIDTH;
+            targetY=targetVertex/GameMap.WIDTH;
+            return Math.sqrt(Math.pow(sourceX- targetX,2)+Math.pow(sourceY- targetY,2));
+        }
     }
 }

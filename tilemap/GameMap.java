@@ -7,10 +7,11 @@ import java.util.HashSet;
 import java.util.Set;
 
 import org.jgrapht.*;
+import org.jgrapht.alg.AStarShortestPath;
 import org.jgrapht.generate.*;
 import org.jgrapht.graph.*;
 import org.jgrapht.traverse.*;
-import org.jgrapht.ext.*;
+//import org.jgrapht.ext.*;
 
 public class GameMap {
 
@@ -24,8 +25,11 @@ public class GameMap {
 
     /** The actual data for our map */
     private Tile[][] data;
+    public  MapGenerator mapGnrtr;
+
 
     private AdjacencyMatrix graph;
+    private Player player;
 
     private ArrayList<Room> rooms;
     private ArrayList<Obstacle> obstcls;
@@ -34,37 +38,23 @@ public class GameMap {
     /**
      * Create a new map with some default contents
      */
-    public GameMap() {
+    public GameMap(Player p, MapGenerator m) {
         data=new Tile[WIDTH][HEIGHT];
         graph= new AdjacencyMatrix(WIDTH*HEIGHT);
         rooms=new ArrayList<>();
         obstcls=new ArrayList<>();
+        player=p;
         //DungeonMapGenerator mgnrt = new DungeonMapGenerator();
-        Game.mapGnrtr.generate(this);
+        mapGnrtr=m;
+        mapGnrtr.generate(this);
         generateGraph();
-
         completeGraph = new SimpleWeightedGraph<Integer, DefaultWeightedEdge>(DefaultWeightedEdge.class);
-        EmptyGraphGenerator<Integer, DefaultWeightedEdge> graphGenerator =
-                new EmptyGraphGenerator<>(HEIGHT*WIDTH);
-        /*VertexFactory<Integer> vFactory =
-                new ClassBasedVertexFactory<Integer>(Integer.class);
-        graphGenerator.generateGraph(completeGraph, vFactory, null);
-        Set<Integer> vertices = new HashSet<Integer>();
-        vertices.addAll(completeGraph.vertexSet());
-        Integer counter = 0;
-        for (Integer vertex : vertices) {
-            replaceVertex(vertex, counter++);
-        }*/
+
         for(int i=0; i< WIDTH*HEIGHT; i++)
             completeGraph.addVertex(new Integer(i));
         generateCompleteGraph();
-        MatrixExporter mtrxExp = new MatrixExporter();
-        try {
-            mtrxExp.exportAdjacencyMatrix(new PrintWriter(new BufferedWriter(new FileWriter("adj.txt"))), completeGraph);
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
-    //System.out.println(completeGraph.toString());
+
+    System.out.println(completeGraph.toString());
         // create some default map data - it would be way
         // cooler to load this from a file and maybe provide
         // a map editor of some sort, but since we're just doing
@@ -145,34 +135,6 @@ public class GameMap {
 
     }
 
-    private boolean replaceVertex(Integer oldVertex, Integer newVertex)
-    {
-        if ((oldVertex == null) || (newVertex == null)) {
-            return false;
-        }
-        Set<DefaultWeightedEdge> relatedEdges = completeGraph.edgesOf(oldVertex);
-        completeGraph.addVertex(newVertex);
-
-        Integer sourceVertex;
-        Integer targetVertex;
-        for (DefaultWeightedEdge e : relatedEdges) {
-            sourceVertex = completeGraph.getEdgeSource(e);
-            targetVertex = completeGraph.getEdgeTarget(e);
-            if (sourceVertex.equals(oldVertex)
-                    && targetVertex.equals(oldVertex))
-            {
-                completeGraph.addEdge(newVertex, newVertex);
-            } else {
-                if (sourceVertex.equals(oldVertex)) {
-                    completeGraph.addEdge(newVertex, targetVertex);
-                } else {
-                    completeGraph.addEdge(sourceVertex, newVertex);
-                }
-            }
-        }
-        completeGraph.removeVertex(oldVertex);
-        return true;
-    }
 
 
     private int toNode(int x, int y) {
@@ -251,5 +213,14 @@ public class GameMap {
                 data[i][j].isBlocked = true;
             }
         return obstcls.add(obst);
+    }
+
+    public SimpleWeightedGraph getGraph() {
+        return completeGraph;
+    }
+
+    public int getPlayerNode() {
+        int[] coords = player.getCoords();
+        return toNode(coords[0], coords[1]);
     }
 }

@@ -54,7 +54,7 @@ public class GameMap {
             completeGraph.addVertex(new Integer(i));
         generateCompleteGraph();
 
-    System.out.println(completeGraph.toString());
+    //System.out.println(completeGraph.toString());
         // create some default map data - it would be way
         // cooler to load this from a file and maybe provide
         // a map editor of some sort, but since we're just doing

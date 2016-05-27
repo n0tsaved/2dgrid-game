@@ -43,7 +43,7 @@ public class Entity {
         for(Integer i : Graphs.getPathVertexList(path))
             map[i%gameMap.WIDTH][i/gameMap.WIDTH].isPath=true;
 
-        //System.out.println(path.toString());
+        System.out.println(path.toString());
     }
 
     public void setPath(){
@@ -57,6 +57,8 @@ public class Entity {
         if(path == null) return;
         for(Integer i : Graphs.getPathVertexList(path))
             map[i%gameMap.WIDTH][i/gameMap.WIDTH].isPath=true;
+        System.out.println(path.toString());
+
     }
 
     public void spawn(){

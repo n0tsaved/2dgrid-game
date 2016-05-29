@@ -11,9 +11,7 @@ import java.awt.*;
 import java.util.Iterator;
 import java.util.Random;
 
-/**
- * Created by merda on 25/05/16.
- */
+
 public class Entity {
     /** The x position of this entity in terms of grid cells */
     private int x;
@@ -32,13 +30,13 @@ public class Entity {
         image=s;
         gameMap=m;
         spawn();
-        //pathfinder=new AStarShortestPath<>(gameMap.getGraph());
-        //path=pathfinder.getShortestPath(y*GameMap.WIDTH+x, gameMap.getPlayerNode(), new ManhattanDistance());
-        dijkstraPathFind = new DijkstraShortestPath<>(gameMap.getGraph(),
-                y*GameMap.WIDTH+x, gameMap.getPlayerNode());
+        astarPathFind=new AStarShortestPath<>(gameMap.getGraph());
+        path=astarPathFind.getShortestPath(y*GameMap.WIDTH+x, gameMap.getPlayerNode(), new ManhattanDistance());
+        //dijkstraPathFind = new DijkstraShortestPath<>(gameMap.getGraph(),
+        //        y*GameMap.WIDTH+x, gameMap.getPlayerNode());
         //System.out.println(ptfnd.getPath().getEdgeList().toString());
         Tile[][] map = gameMap.getData();
-        path= dijkstraPathFind.getPath();
+        //path= dijkstraPathFind.getPath();
         if(path==null) return;
         for(Integer i : Graphs.getPathVertexList(path))
             map[i%gameMap.WIDTH][i/gameMap.WIDTH].isPath=true;
@@ -51,8 +49,10 @@ public class Entity {
         //astarPathFind=new AStarShortestPath<>(gameMap.getGraph());
         //path=astarPathFind.getShortestPath(y*GameMap.WIDTH+x, gameMap.getPlayerNode(), new ManhattanDistance());
         //System.out.println(path.toString());
-        path=new DijkstraShortestPath<Integer, DefaultWeightedEdge>(gameMap.getGraph(),
-                y*GameMap.WIDTH+x, gameMap.getPlayerNode()).getPath();
+        //path=new DijkstraShortestPath<Integer, DefaultWeightedEdge>(gameMap.getGraph(),
+        //        y*GameMap.WIDTH+x, gameMap.getPlayerNode()).getPath();
+        astarPathFind=new AStarShortestPath<>(gameMap.getGraph());
+        path=astarPathFind.getShortestPath(y*GameMap.WIDTH+x, gameMap.getPlayerNode(), new ManhattanDistance());
         Tile[][] map = gameMap.getData();
         if(path == null) return;
         for(Integer i : Graphs.getPathVertexList(path))
@@ -90,6 +90,19 @@ public class Entity {
         //g.rotate(-ang, xp, yp);
     }
 
+    private class EuclideanDistance implements AStarAdmissibleHeuristic<Integer>{
+
+        @Override
+        public double getCostEstimate(Integer sourceVertex, Integer targetVertex) {
+            int sourceX, sourceY, targetX, targetY;
+            sourceX=sourceVertex%GameMap.WIDTH;
+            sourceY=sourceVertex/GameMap.WIDTH;
+            targetX=targetVertex%GameMap.WIDTH;
+            targetY=targetVertex/GameMap.WIDTH;
+            return Math.sqrt(Math.pow(sourceX - targetX,2)+Math.pow(sourceY - targetY,2));
+        }
+    }
+
     private class ManhattanDistance implements AStarAdmissibleHeuristic<Integer>{
 
         @Override
@@ -99,7 +112,9 @@ public class Entity {
             sourceY=sourceVertex/GameMap.WIDTH;
             targetX=targetVertex%GameMap.WIDTH;
             targetY=targetVertex/GameMap.WIDTH;
-            return Math.sqrt(Math.pow(sourceX- targetX,2)+Math.pow(sourceY- targetY,2));
+            System.out.println("Source: [" +sourceX+","+sourceY+"] Target: ["+
+                    targetX+","+targetY+"] EstimatedCost: "+Math.abs(sourceX - targetX)+Math.abs(sourceY - targetY));
+            return Math.abs(sourceX - targetX)+Math.abs(sourceY - targetY);
         }
     }
 }

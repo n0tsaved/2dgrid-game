@@ -112,8 +112,8 @@ public class Entity {
             sourceY=sourceVertex/GameMap.WIDTH;
             targetX=targetVertex%GameMap.WIDTH;
             targetY=targetVertex/GameMap.WIDTH;
-            System.out.println("Source: [" +sourceX+","+sourceY+"] Target: ["+
-                    targetX+","+targetY+"] EstimatedCost: "+Math.abs(sourceX - targetX)+Math.abs(sourceY - targetY));
+            //System.out.println("Source: [" +sourceX+","+sourceY+"] Target: ["+
+            //        targetX+","+targetY+"] EstimatedCost: "+Math.abs(sourceX - targetX)+Math.abs(sourceY - targetY));
             return Math.abs(sourceX - targetX)+Math.abs(sourceY - targetY);
         }
     }

@@ -124,7 +124,7 @@ public class AStarShortestPath<V,E> {
         do {
             FibonacciHeapNode<V> currentNode = openList.removeMin();
             //Check whether we reached the target vertex
-            if (currentNode.getData() == targetVertex){
+            if (currentNode.getData().equals(targetVertex)){
                 //Build the path
                 return this.buildGraphPath(sourceVertex, targetVertex, currentNode.getKey());
             }

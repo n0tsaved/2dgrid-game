@@ -28,7 +28,7 @@ public class GameMap {
     public  MapGenerator mapGnrtr;
 
 
-    private AdjacencyMatrix graph;
+
     private Player player;
 
     private ArrayList<Room> rooms;
@@ -40,14 +40,12 @@ public class GameMap {
      */
     public GameMap(Player p, MapGenerator m) {
         data=new Tile[WIDTH][HEIGHT];
-        graph= new AdjacencyMatrix(WIDTH*HEIGHT);
         rooms=new ArrayList<>();
         obstcls=new ArrayList<>();
         player=p;
         //DungeonMapGenerator mgnrt = new DungeonMapGenerator();
         mapGnrtr=m;
         mapGnrtr.generate(this);
-        generateGraph();
         completeGraph = new SimpleWeightedGraph<Integer, DefaultWeightedEdge>(DefaultWeightedEdge.class);
 
         for(int i=0; i< WIDTH*HEIGHT; i++)
@@ -85,29 +83,6 @@ public class GameMap {
         data[11][7] = CLEAR;*/
     }
 
-    private void generateGraph() {
-        for(int i=0;i<WIDTH;i++)
-            for(int j=0;j<HEIGHT;j++) {
-                if (blocked(i, j)) continue;
-                if(i>0 && !blocked(i-1, j)) //add sx
-                    graph.addEdge(toNode(i,j), toNode(i-1,j));
-                if(j>0 && !blocked(i,j-1)) //add up
-                    graph.addEdge(toNode(i,j),toNode(i,j-1));
-                if(j>0&&i>0&&!blocked(i-1,j-1)) //add sxup
-                    graph.addEdge(toNode(i,j), toNode(i-1,j-1));
-                if(j>0&&i<WIDTH&&!blocked(i+1,j-1)) // add dxup
-                    graph.addEdge(toNode(i,j), toNode(i+1,j-1));
-                if(i<WIDTH&&!blocked(i+1,j)) //add dx
-                    graph.addEdge(toNode(i,j), toNode(i+1,j));
-                if(i<WIDTH&&j<HEIGHT&&!blocked(i+1,j+1)) //add dxdown
-                    graph.addEdge(toNode(i,j), toNode(i+1,j+1));
-                if(j<HEIGHT&&!blocked(i,j+1)) //add down
-                    graph.addEdge(toNode(i,j), toNode(i,j+1));
-                if(j<HEIGHT&&i>0&&!blocked(i-1,j+1)) //add sxdown
-                    graph.addEdge(toNode(i,j), toNode(i-1,j+1));
-            }
-
-    }
 
     private void generateCompleteGraph() {
         for(int i=0;i<WIDTH;i++) {

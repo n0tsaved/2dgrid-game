@@ -1,4 +1,0 @@
-package org.jgrapht.perf.flow.generated;
-public class MaximumFlowAlgorithmPerformanceTest_EdmondsKarpMaximumFlowRandomGraphBenchmark_jmh extends MaximumFlowAlgorithmPerformanceTest_EdmondsKarpMaximumFlowRandomGraphBenchmark_jmh_B3 {
-}
-

@@ -1,5 +1,9 @@
 package tilemap;
 
+import tilemap.jgrapht.alg.AStarShortestPath;
+import tilemap.jgrapht.alg.ThetaStarShortestPath;
+import tilemap.jgrapht.graph.DefaultEdge;
+
 import java.awt.*;
 import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
@@ -29,9 +33,9 @@ public class Game extends Canvas{
         // and not resizable - this just gives us less to account for
         Frame frame = new Frame("Tile GameMap");
         frame.setLayout(null);
-        setBounds(0,0,800,600);
+        setBounds(0,0,800,800);
         frame.add(this);
-        frame.setSize(800,600);
+        frame.setSize(800,800);
         frame.setResizable(false);
 
         // add a listener to respond to the window closing so we can
@@ -83,8 +87,8 @@ public class Game extends Canvas{
         player.setGameMap(gameMap);
         player.spawn();
         controller= new GameController( this, player);
-        enemies.add(new Entity("#", gameMap));
-        enemies.add(new Entity("§", gameMap));
+        enemies.add(new Entity("#", gameMap, new ThetaStarShortestPath<Integer, DefaultEdge>(gameMap.getGraph())));
+        enemies.add(new Entity("§", gameMap, new AStarShortestPath<Integer, DefaultEdge>(gameMap.getGraph())));
         //for(Entity e : enemies)
         //    e.spawn();
 
@@ -109,7 +113,7 @@ public class Game extends Canvas{
 
             // clear the screen
             g.setColor(Color.black);
-            g.fillRect(0,0,800,600);
+            g.fillRect(0,0,800,800);
 
             // render our game objects
             g.translate(100,100);
@@ -165,7 +169,10 @@ public class Game extends Canvas{
         for(Entity e : enemies) {
             e.setGameMap(gameMap);
             e.spawn();
-            e.setPath();
+            if(e.getImage().equals("#")) e.setPath(new ThetaStarShortestPath<Integer, DefaultEdge>(gameMap.getGraph()));
+            else e.setPath(new AStarShortestPath<Integer, DefaultEdge>(gameMap.getGraph()));
+            if(gameMap.lineOfSight(player.getCoords()[0], player.getCoords()[1], e.getX(), e.getY()))
+                System.out.println("player is in the lof of "+ e.getImage());
         }
     }
 

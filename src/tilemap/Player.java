@@ -45,7 +45,7 @@ public class Player {
             // at 15,15.
             int xp = (int) (Tile.TILE_SIZE * x);
             int yp = (int) (Tile.TILE_SIZE * y);
-            g.setColor(Color.RED);
+            g.setColor(Color.BLACK);
 
             // rotate the sprite based on the current angle and then
             // draw it
@@ -79,7 +79,7 @@ public class Player {
         if (gameMap.blocked(nx, ny)) {
             return false;
         }
-        if(nx>=GameMap.WIDTH || ny >GameMap.HEIGHT || nx<0 || ny<=0)
+        if(nx>=GameMap.WIDTH || ny >GameMap.HEIGHT || nx<0 || ny<0)
             return false;
         /*if (gameMap.blocked(nx + size, ny - size)) {
             return false;

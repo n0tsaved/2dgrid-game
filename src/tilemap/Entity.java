@@ -6,7 +6,9 @@ import tilemap.jgrapht.GraphPath;
 import tilemap.jgrapht.Graphs;
 import tilemap.jgrapht.alg.AStarShortestPath;
 import tilemap.jgrapht.alg.DijkstraShortestPath;
+import tilemap.jgrapht.alg.ThetaStarShortestPath;
 import tilemap.jgrapht.alg.interfaces.AStarAdmissibleHeuristic;
+import tilemap.jgrapht.alg.interfaces.Pathfinder;
 import tilemap.jgrapht.graph.DefaultWeightedEdge;
 
 import java.awt.*;
@@ -26,27 +28,39 @@ public class Entity {
     private static Random r = new Random(GameMap.WIDTH*GameMap.HEIGHT);
     private AStarShortestPath<Integer, DefaultWeightedEdge> astarPathFind;
     private DijkstraShortestPath<Integer, DefaultWeightedEdge> dijkstraPathFind;
-    private GraphPath<Integer, DefaultWeightedEdge> path;
+    private ThetaStarShortestPath<Integer,DefaultWeightedEdge> thetaPathFind;
+    private GraphPath<Integer, DefaultWeightedEdge> AStarpath;
+    private GraphPath<Integer, DefaultWeightedEdge> ThetaStarpath;
 
-    public Entity(String s, GameMap m){
+    private Pathfinder pathfinder;
+
+    public Entity(String s, GameMap m, Pathfinder p){
         image=s;
         gameMap=m;
+        pathfinder=p;
         spawn();
         astarPathFind=new AStarShortestPath<Integer, DefaultWeightedEdge>(gameMap.getGraph());
-        path=astarPathFind.getShortestPath(y*GameMap.WIDTH+x, gameMap.getPlayerNode(), new ManhattanDistance());
+        thetaPathFind=new ThetaStarShortestPath<>(gameMap.getGraph());
+        AStarpath=astarPathFind.getShortestPath(new Integer(y*GameMap.WIDTH+x), new Integer(gameMap.getPlayerNode()), new ManhattanDistance());
+        ThetaStarpath=thetaPathFind.getShortestPath(new Integer(y*GameMap.WIDTH+x), new Integer(gameMap.getPlayerNode()), new ManhattanDistance());
         //dijkstraPathFind = new DijkstraShortestPath<>(gameMap.getGraph(),
         //        y*GameMap.WIDTH+x, gameMap.getPlayerNode());
         //System.out.println(ptfnd.getPath().getEdgeList().toString());
+        //thetaPathFind=new ThetaStarShortestPath<>(m);
+        //path=thetaPathFind.getShortestPath(new Integer(y*GameMap.WIDTH+x), new Integer(gameMap.getPlayerNode()), new ManhattanDistance());
         Tile[][] map = gameMap.getData();
         //path= dijkstraPathFind.getPath();
-        if(path==null) return;
-        for(Integer i : Graphs.getPathVertexList(path))
-            map[i%gameMap.WIDTH][i/gameMap.WIDTH].isPath=true;
+        if(AStarpath==null) return;
+        for(Integer i : Graphs.getPathVertexList(AStarpath))
+            map[i%gameMap.WIDTH][i/gameMap.WIDTH].isAstarPath=true;
+        for(Integer i : Graphs.getPathVertexList(ThetaStarpath))
+            map[i%gameMap.WIDTH][i/gameMap.WIDTH].isThetaPath=true;
 
-        System.out.println(path.toString());
+        System.out.println("A*: "+AStarpath.toString());
+        System.out.println("Theta*: "+ThetaStarpath.toString());
     }
 
-    public void setPath(){
+    public void setPath(Pathfinder p){
 
         //astarPathFind=new AStarShortestPath<>(gameMap.getGraph());
         //path=astarPathFind.getShortestPath(y*GameMap.WIDTH+x, gameMap.getPlayerNode(), new ManhattanDistance());
@@ -54,13 +68,32 @@ public class Entity {
         //path=new DijkstraShortestPath<Integer, DefaultWeightedEdge>(gameMap.getGraph(),
         //        y*GameMap.WIDTH+x, gameMap.getPlayerNode()).getPath();
         astarPathFind=new AStarShortestPath<>(gameMap.getGraph());
-        path=astarPathFind.getShortestPath(y*GameMap.WIDTH+x, gameMap.getPlayerNode(), new ManhattanDistance());
+        //path=astarPathFind.getShortestPath(y*GameMap.WIDTH+x, gameMap.getPlayerNode(), new ManhattanDistance());
+        thetaPathFind=new ThetaStarShortestPath<Integer, DefaultWeightedEdge>(gameMap.getGraph());
+        pathfinder = p;
+        AStarpath=astarPathFind.getShortestPath(new Integer(y*GameMap.WIDTH+x), new Integer(gameMap.getPlayerNode()), new ManhattanDistance());
+        ThetaStarpath=thetaPathFind.getShortestPath(new Integer(y*GameMap.WIDTH+x), new Integer(gameMap.getPlayerNode()), new ManhattanDistance());
         Tile[][] map = gameMap.getData();
-        if(path == null) return;
-        for(Integer i : Graphs.getPathVertexList(path))
-            map[i%gameMap.WIDTH][i/gameMap.WIDTH].isPath=true;
-        System.out.println(path.toString());
 
+        if(AStarpath==null) return;
+        for(Integer i : Graphs.getPathVertexList(AStarpath))
+            map[i%gameMap.WIDTH][i/gameMap.WIDTH].isAstarPath=true;
+        for(Integer i : Graphs.getPathVertexList(ThetaStarpath))
+            map[i%gameMap.WIDTH][i/gameMap.WIDTH].isThetaPath=true;
+
+        System.out.println("A*: "+AStarpath.toString());
+        System.out.println("Theta*: "+ThetaStarpath.toString());
+    }
+
+    public int getX(){
+        return x;
+    }
+    public int getY(){
+        return y;
+    }
+
+    public String getImage(){
+        return image;
     }
 
     public void spawn(){

@@ -37,6 +37,7 @@ package tilemap.jgrapht.alg;
 import tilemap.jgrapht.*;
 import tilemap.jgrapht.*;
 import tilemap.jgrapht.alg.interfaces.AStarAdmissibleHeuristic;
+import tilemap.jgrapht.alg.interfaces.Pathfinder;
 import tilemap.jgrapht.graph.GraphPathImpl;
 import tilemap.jgrapht.util.FibonacciHeap;
 import tilemap.jgrapht.util.FibonacciHeapNode;
@@ -65,9 +66,9 @@ import java.util.*;
  *
  * @since Aug, 2015
  */
-public class AStarShortestPath<V,E> {
+public class AStarShortestPath<V,E> implements Pathfinder<V,E> {
 
-    private final Graph<V, E> graph;
+    protected final Graph<V, E> graph;
 
     //List of open nodes
     protected FibonacciHeap<V> openList;
@@ -94,7 +95,7 @@ public class AStarShortestPath<V,E> {
      * Initializes the data structures
      * @param admissibleHeuristic admissible heuristic
      */
-    private void initialize(AStarAdmissibleHeuristic<V> admissibleHeuristic){
+    protected void initialize(AStarAdmissibleHeuristic<V> admissibleHeuristic){
         this.admissibleHeuristic =admissibleHeuristic;
         openList = new FibonacciHeap<V>();
         vertexToHeapNodeMap=new HashMap<V, FibonacciHeapNode<V>>();
@@ -112,6 +113,8 @@ public class AStarShortestPath<V,E> {
      * @param admissibleHeuristic admissible heuristic which estimates the distance from a node to the target node.
      * @return the shortest path from sourceVertex to targetVertex
      */
+
+
     public GraphPath<V,E> getShortestPath(V sourceVertex, V targetVertex, AStarAdmissibleHeuristic<V> admissibleHeuristic){
         if(!graph.containsVertex(sourceVertex) || !graph.containsVertex(targetVertex))
             throw new IllegalArgumentException("Source or target vertex not contained in the graph!");
@@ -137,7 +140,7 @@ public class AStarShortestPath<V,E> {
         return null;
     }
 
-    private void expandNode(FibonacciHeapNode<V> currentNode, V endVertex){
+    protected void expandNode(FibonacciHeapNode<V> currentNode, V endVertex){
         numberOfExpandedNodes++;
 
         Set<E> outgoingEdges=null;
@@ -178,7 +181,7 @@ public class AStarShortestPath<V,E> {
      * @param pathLength length of the path
      * @return the shortest path from startVertex to endVertex
      */
-    private GraphPath<V, E> buildGraphPath(V startVertex, V targetVertex, double pathLength){
+    protected GraphPath<V, E> buildGraphPath(V startVertex, V targetVertex, double pathLength){
         List<E> edgeList = this.buildPath(targetVertex);
         return new GraphPathImpl<V, E>(graph, startVertex, targetVertex, edgeList, pathLength);
     }
@@ -205,5 +208,6 @@ public class AStarShortestPath<V,E> {
     public int getNumberOfExpandedNodes(){
         return numberOfExpandedNodes;
     }
+
 
 }

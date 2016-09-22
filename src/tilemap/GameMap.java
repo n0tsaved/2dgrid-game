@@ -14,13 +14,13 @@ public class GameMap {
     /** The width in grid cells of our map */
     public static final int WIDTH = 60;
     /** The height in grid cells of our map */
-    public static final int HEIGHT = 45;
+    public static final int HEIGHT = 60;
 
     /** The rendered size of the tile (in pixels) */
 
 
     /** The actual data for our map */
-    private Tile[][] data;
+    public static Tile[][] data=new Tile[WIDTH][HEIGHT];
     public  MapGenerator mapGnrtr;
 
 
@@ -35,7 +35,6 @@ public class GameMap {
      * Create a new map with some default contents
      */
     public GameMap(Player p, MapGenerator m) {
-        data=new Tile[WIDTH][HEIGHT];
         rooms=new ArrayList<>();
         obstcls=new ArrayList<>();
         player=p;
@@ -89,18 +88,30 @@ public class GameMap {
                     completeGraph.addEdge(toNode(i, j), toNode(i - 1, j), new DefaultWeightedEdge());
                 if (!blocked(i, j - 1)) //add up
                     completeGraph.addEdge(toNode(i, j), toNode(i, j - 1), new DefaultWeightedEdge());
-                if (!blocked(i - 1, j - 1)) //add sxup
-                    completeGraph.addEdge(toNode(i, j), toNode(i - 1, j - 1), new DefaultWeightedEdge());
-                if (!blocked(i + 1, j - 1)) // add dxup
+                if (!blocked(i - 1, j - 1)) { //add sxup
+                    DefaultWeightedEdge e = new DefaultWeightedEdge();
+                    completeGraph.addEdge(toNode(i, j), toNode(i - 1, j - 1), e);
+                    //completeGraph.setEdgeWeight(e, Math.sqrt(2));
+                }
+                if (!blocked(i + 1, j - 1)) { // add dxup
+                    DefaultWeightedEdge e = new DefaultWeightedEdge();
                     completeGraph.addEdge(toNode(i, j), toNode(i + 1, j - 1), new DefaultWeightedEdge());
+                    //completeGraph.setEdgeWeight(e, Math.sqrt(2));
+                }
                 if (!blocked(i + 1, j)) //add dx
                     completeGraph.addEdge(toNode(i, j), toNode(i + 1, j), new DefaultWeightedEdge());
-                if (!blocked(i + 1, j + 1)) //add dxdown
+                if (!blocked(i + 1, j + 1)){ //add dxdown
+                    DefaultWeightedEdge e = new DefaultWeightedEdge();
                     completeGraph.addEdge(toNode(i, j), toNode(i + 1, j + 1), new DefaultWeightedEdge());
+                    //completeGraph.setEdgeWeight(e, Math.sqrt(2));
+            }
                 if (!blocked(i, j + 1)) //add down
                     completeGraph.addEdge(toNode(i, j), toNode(i, j + 1), new DefaultWeightedEdge());
-                if (!blocked(i - 1, j + 1)) //add sxdown
+                if (!blocked(i - 1, j + 1)) { //add sxdown
+                    DefaultWeightedEdge e = new DefaultWeightedEdge();
                     completeGraph.addEdge(toNode(i, j), toNode(i - 1, j + 1), new DefaultWeightedEdge());
+                    //completeGraph.setEdgeWeight(e, Math.sqrt(2));
+                }
             }
         }
 
@@ -138,13 +149,13 @@ public class GameMap {
      * @param y The y position to check for blocking
      * @return True if the location is blocked
      */
-    public boolean blocked(int x, int y) {
+    public static boolean blocked(int x, int y) {
         // look up the right cell (based on simply rounding the floating
         // values) and check the value
         if(x>= 0 && y >=0 && x<WIDTH && y<HEIGHT){
             //if(data[x][y].isBlocked==true) System.out.println("("+x+","+y+") is blocked");
             //else System.out.println("("+x+","+y+") is not blocked");
-            return data[x][y].isBlocked==true;
+            return GameMap.data[x][y].isBlocked==true;
         }
             //return !grid.isTraversable(x,y);
         else return true;
@@ -193,5 +204,64 @@ public class GameMap {
     public int getPlayerNode() {
         int[] coords = player.getCoords();
         return toNode(coords[0], coords[1]);
+    }
+
+    public static boolean lineOfSight(int x1, int y1, int x2, int y2) {
+        int dy = y2 - y1;
+        int dx = x2 - x1;
+
+        int f = 0;
+
+        int signY = 1;
+        int signX = 1;
+        int offsetX = 0;
+        int offsetY = 0;
+
+        if (dy < 0) {
+            dy *= -1;
+            signY = -1;
+            offsetY = -1;
+        }
+        if (dx < 0) {
+            dx *= -1;
+            signX = -1;
+            offsetX = -1;
+        }
+
+        if (dx >= dy) {
+            while (x1 != x2) {
+                f += dy;
+                if (f >= dx) {
+                    if (blocked(x1 + offsetX, y1 + offsetY))
+                        return false;
+                    y1 += signY;
+                    f -= dx;
+                }
+                if (f != 0 && blocked(x1 + offsetX, y1 + offsetY))
+                    return false;
+                if (dy == 0 && blocked(x1 + offsetX, y1) && blocked(x1 + offsetX, y1 - 1))
+                    return false;
+
+                x1 += signX;
+            }
+        }
+        else {
+            while (y1 != y2) {
+                f += dx;
+                if (f >= dy) {
+                    if (blocked(x1 + offsetX, y1 + offsetY))
+                        return false;
+                    x1 += signX;
+                    f -= dy;
+                }
+                if (f != 0 && blocked(x1 + offsetX, y1 + offsetY))
+                    return false;
+                if (dx == 0 && blocked(x1, y1 + offsetY) && blocked(x1 - 1, y1 + offsetY))
+                    return false;
+
+                y1 += signY;
+            }
+        }
+        return true;
     }
 }

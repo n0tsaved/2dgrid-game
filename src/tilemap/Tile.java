@@ -4,7 +4,7 @@ import java.awt.*;
 
 
 public class Tile {
-    public static final int TILE_SIZE = 10;
+    public static final int TILE_SIZE = 5;
     public boolean isBlocked;
     public boolean isStart;
     public boolean isThetaPath;
@@ -21,9 +21,9 @@ public class Tile {
         else if(isAstarPath) g.setColor(Color.RED.brighter());
         else if(isThetaPath) g.setColor(Color.BLUE.brighter());
         else g.setColor(Color.GRAY);
-        g.fillRect(x*TILE_SIZE,y*TILE_SIZE-10,TILE_SIZE,TILE_SIZE);
+        g.fillRect(x*TILE_SIZE+5,y*TILE_SIZE-5,TILE_SIZE,TILE_SIZE);
 
         g.setColor(g.getColor().darker());
-        g.drawRect(x*TILE_SIZE,y*TILE_SIZE-10,TILE_SIZE,TILE_SIZE);
+        g.drawRect(x*TILE_SIZE+5,y*TILE_SIZE-5,TILE_SIZE,TILE_SIZE);
     }
 }

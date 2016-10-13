@@ -7,9 +7,9 @@ import java.util.Random;
  * Created by Hp Dell i7 on 07/06/2016.
  */
 public class DungeonMapGenerator extends MapGenerator {
-    private final int ROOM_MAX_SIZE=15;
-    private final int ROOM_MIN_SIZE=6;
-    private final int MAX_ROOMS=15;
+    private static final int ROOM_MAX_SIZE=20;
+    private static final int ROOM_MIN_SIZE=10;
+    private static final int MAX_ROOMS=15;
     public void generate(GameMap map) {
         setAllBlocked(map.getData());
         placeRooms(map);

@@ -12,9 +12,9 @@ import java.util.ArrayList;
 public class GameMap {
 
     /** The width in grid cells of our map */
-    public static final int WIDTH = 60;
+    public static final int WIDTH = 120 ;
     /** The height in grid cells of our map */
-    public static final int HEIGHT = 60;
+    public static final int HEIGHT = 120;
 
     /** The rendered size of the tile (in pixels) */
 
@@ -91,26 +91,26 @@ public class GameMap {
                 if (!blocked(i - 1, j - 1)) { //add sxup
                     DefaultWeightedEdge e = new DefaultWeightedEdge();
                     completeGraph.addEdge(toNode(i, j), toNode(i - 1, j - 1), e);
-                    //completeGraph.setEdgeWeight(e, Math.sqrt(2));
+                    completeGraph.setEdgeWeight(e, Math.sqrt(2));
                 }
                 if (!blocked(i + 1, j - 1)) { // add dxup
                     DefaultWeightedEdge e = new DefaultWeightedEdge();
                     completeGraph.addEdge(toNode(i, j), toNode(i + 1, j - 1), new DefaultWeightedEdge());
-                    //completeGraph.setEdgeWeight(e, Math.sqrt(2));
+                    completeGraph.setEdgeWeight(e, Math.sqrt(2));
                 }
                 if (!blocked(i + 1, j)) //add dx
                     completeGraph.addEdge(toNode(i, j), toNode(i + 1, j), new DefaultWeightedEdge());
                 if (!blocked(i + 1, j + 1)){ //add dxdown
                     DefaultWeightedEdge e = new DefaultWeightedEdge();
                     completeGraph.addEdge(toNode(i, j), toNode(i + 1, j + 1), new DefaultWeightedEdge());
-                    //completeGraph.setEdgeWeight(e, Math.sqrt(2));
+                    completeGraph.setEdgeWeight(e, Math.sqrt(2));
             }
                 if (!blocked(i, j + 1)) //add down
                     completeGraph.addEdge(toNode(i, j), toNode(i, j + 1), new DefaultWeightedEdge());
                 if (!blocked(i - 1, j + 1)) { //add sxdown
                     DefaultWeightedEdge e = new DefaultWeightedEdge();
                     completeGraph.addEdge(toNode(i, j), toNode(i - 1, j + 1), new DefaultWeightedEdge());
-                    //completeGraph.setEdgeWeight(e, Math.sqrt(2));
+                    completeGraph.setEdgeWeight(e, Math.sqrt(2));
                 }
             }
         }

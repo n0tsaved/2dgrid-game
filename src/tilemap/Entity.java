@@ -55,9 +55,7 @@ public class Entity {
             map[i%gameMap.WIDTH][i/gameMap.WIDTH].isAstarPath=true;
         for(Integer i : Graphs.getPathVertexList(ThetaStarpath))
             map[i%gameMap.WIDTH][i/gameMap.WIDTH].isThetaPath=true;
-
-        System.out.println("A*: "+AStarpath.toString());
-        System.out.println("Theta*: "+ThetaStarpath.toString());
+        report();
     }
 
     public void setPath(Pathfinder p){
@@ -81,8 +79,7 @@ public class Entity {
         for(Integer i : Graphs.getPathVertexList(ThetaStarpath))
             map[i%gameMap.WIDTH][i/gameMap.WIDTH].isThetaPath=true;
 
-        System.out.println("A*: "+AStarpath.toString());
-        System.out.println("Theta*: "+ThetaStarpath.toString());
+        report();
     }
 
     public int getX(){
@@ -124,6 +121,13 @@ public class Entity {
         //g.drawImage(image, (int) (xp - 16), (int) (yp - 16), null);
         //g.rotate(-ang, xp, yp);
     }
+
+    private void report(){
+        System.out.println("[AGENT]: "+image);
+        System.out.println("A*: "+AStarpath.toString()+"\nExpanded nodes: "+astarPathFind.getNumberOfExpandedNodes()+"\nWeight: "+AStarpath.getWeight());
+        System.out.println("Theta*: "+ThetaStarpath.toString()+"\nExpanded nodes: "+thetaPathFind.getNumberOfExpandedNodes()+"\nWeight: "+ThetaStarpath.getWeight());
+    }
+
 
     private class EuclideanDistance implements AStarAdmissibleHeuristic<Integer>{
 

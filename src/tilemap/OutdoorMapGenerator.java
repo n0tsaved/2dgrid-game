@@ -5,9 +5,9 @@ import java.util.Random;
 /**
  */
 public class OutdoorMapGenerator extends MapGenerator {
-    private static final int OBSTCL_MAX_SIZE=10;
-    private static final int OBSTCL_MIN_SIZE=3;
-    private static final int MAX_OBSTCL=25;
+    private static final int OBSTCL_MAX_SIZE= 20;
+    private static final int OBSTCL_MIN_SIZE=10;
+    private static final int MAX_OBSTCL=50;
 
     @Override
     public void generate(GameMap map) {

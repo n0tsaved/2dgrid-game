@@ -18,7 +18,7 @@ public class Game extends Canvas{
 
     /** The gameMap our player will wander round */
     /** The player entity that will be controlled with cursors */
-    private Player player = new Player("@");
+    private Player player = new Player("☺");
 
     private LinkedList<Entity> enemies = new LinkedList<>();
 
@@ -154,9 +154,9 @@ public class Game extends Canvas{
             }
             // after we've run through the segments if there is anything
             // left over we update for that
-            if ((delta % 5) != 0) {
+            if ((delta % 5) != 0)
                 controller.logic(delta % 5);
-            }
+            //}
             Thread.sleep( Math.abs((last-System.nanoTime() + OPTIMAL_TIME)/1000000) );
 
         }

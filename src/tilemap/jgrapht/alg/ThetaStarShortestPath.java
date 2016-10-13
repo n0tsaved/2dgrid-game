@@ -4,6 +4,9 @@ import tilemap.Game;
 import tilemap.jgrapht.*;
 import tilemap.jgrapht.alg.interfaces.AStarAdmissibleHeuristic;
 import tilemap.jgrapht.graph.DefaultEdge;
+import tilemap.jgrapht.graph.DefaultWeightedEdge;
+import tilemap.jgrapht.graph.GraphPathImpl;
+import tilemap.jgrapht.graph.SimpleWeightedGraph;
 import tilemap.jgrapht.util.FibonacciHeapNode;
 
 import java.util.Set;
@@ -61,6 +64,7 @@ public class ThetaStarShortestPath<V extends Integer ,E> extends AStarShortestPa
         V parent = null;
 
         for(E edge : outgoingEdges){
+            lof=false;
             V successor = Graphs.getOppositeVertex((Graph<V, E>) graph, edge, currentNode.getData());
             if (successor == currentNode.getData() || closedList.contains(successor)) //Ignore self-loops or nodes which have already been expanded
                 continue;
@@ -79,9 +83,10 @@ public class ThetaStarShortestPath<V extends Integer ,E> extends AStarShortestPa
 
             }
 
-
             if(!vertexToHeapNodeMap.containsKey(successor) || tentativeGScore < (double) gScoreMap.get(successor)){
 
+               // if(lof) cameFrom.put(successor,parentEdge);
+                //else cameFrom.put(successor, edge);
                 cameFrom.put(successor, edge);
                 gScoreMap.put(successor, tentativeGScore);
 
@@ -97,6 +102,33 @@ public class ThetaStarShortestPath<V extends Integer ,E> extends AStarShortestPa
         }
     }
 
+    /*protected GraphPath<V, E> buildGraphPath(V startVertex, V targetVertex, double pathLength){
+         Graph<V,E> fakeGraph = new SimpleWeightedGraph<V, E>((Class<? extends E>) DefaultWeightedEdge.class);
+        for(int i=0; i< GameMap.WIDTH*GameMap.HEIGHT; i++)
+            fakeGraph.addVertex((V) new Integer(i));
+        Integer currentNode = targetVertex;
+        while(cameFrom.get(currentNode)!=null){
+            System.out.println((V) graph.getEdgeSource(cameFrom.get(currentNode))+"," +currentNode);
+
+            if(cameFrom.get(currentNode)!=null && !graph.getEdgeSource(cameFrom.get(currentNode)).equals(currentNode))
+                if (!fakeGraph.containsEdge((V) graph.getEdgeSource(cameFrom.get(currentNode)), (V) currentNode))
+                    fakeGraph.addEdge((V) graph.getEdgeSource(cameFrom.get(currentNode)), (V) currentNode);
+            currentNode= (V) graph.getEdgeSource(cameFrom.get(currentNode));
+        }
+        List<E> edgeList = this.buildPath(targetVertex);
+        return new GraphPathImpl<V, E>(fakeGraph, startVertex, targetVertex, edgeList, pathLength);
+
+    }
+
+    private List<E> buildPath(V currentNode){
+        if(cameFrom.containsKey(currentNode)){
+            List<E> path = buildPath(Graphs.getOppositeVertex((Graph<V, E>) graph, (E) cameFrom.get(currentNode), (V) currentNode));
+            path.add((E) cameFrom.get(currentNode));
+            return path;
+            }else
+                return new ArrayList<E>();
+    }
+*/
 
     private double getDist(V sourceVertex, V targetVertex) {
         int sourceX, sourceY, targetX, targetY;

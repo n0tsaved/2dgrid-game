@@ -25,6 +25,8 @@ public class Game extends Canvas{
     private GameController controller;
     private int fps;
     private GameMap gameMap = new GameMap(player, new IndoorMapGenerator());
+    private final static int MS_PER_UPDATE = 1000000000/2;
+
 
     public Game() {
 
@@ -106,6 +108,7 @@ public class Game extends Canvas{
         long last = System.nanoTime();
         final int TARGET_FPS = 60;
         final long OPTIMAL_TIME = 1000000000 / TARGET_FPS;
+        int lag =0;
 
         // keep looking while the game is running
         while (gameRunning) {
@@ -133,16 +136,26 @@ public class Game extends Canvas{
             // game logic
             long now=System.nanoTime();
             long updateLenght = (now - last);
+
+
             last = now;
+
             long delta=updateLenght/(OPTIMAL_TIME);
             lastFpsTime+=updateLenght;
             fps++;
-            if (lastFpsTime >= 1000000000)
+
+            while (lastFpsTime >= 1000000000/2)
             {
+
                 //System.out.println("(FPS: "+fps+")");
-                lastFpsTime = 0;
+                for(Entity e : enemies)
+                    e.move();
+                lastFpsTime -= 1000000000/2;
                 fps = 0;
+
             }
+
+
             // now this needs a bit of explaining. The amount of time
             // passed between rendering can vary quite alot. If we were
             // to move our player based on the normal delta it would

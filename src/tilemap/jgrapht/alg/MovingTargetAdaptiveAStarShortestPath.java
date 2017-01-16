@@ -4,17 +4,16 @@ import tilemap.GameMap;
 import tilemap.jgrapht.*;
 import tilemap.jgrapht.alg.interfaces.AStarAdmissibleHeuristic;
 import tilemap.jgrapht.alg.interfaces.Pathfinder;
+import tilemap.jgrapht.graph.GraphPathImpl;
 import tilemap.jgrapht.util.FibonacciHeap;
 import tilemap.jgrapht.util.FibonacciHeapNode;
 
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.Set;
+import java.util.*;
 
 /**
  * Created by notsaved on 10/26/16.
  */
-public class PathAdaptiveAStarShortestPath<V,E> extends AStarShortestPath<V,E> implements Pathfinder<V,E> {
+public class MovingTargetAdaptiveAStarShortestPath<V,E> extends AStarShortestPath<V,E> implements Pathfinder<V,E> {
 
     private HashMap<V,Integer> search;
     private HashMap<Integer, Double> pathToCost;
@@ -22,11 +21,12 @@ public class PathAdaptiveAStarShortestPath<V,E> extends AStarShortestPath<V,E> i
     private int counter=0;
     private HashMap<V,V> nextstate;
     private HashMap<V,V> backstate;
+    private HashMap<Integer, Double> deltah;
     private V start, goal;
     private GraphPath<V,E> path;
     private Set<E> updatedEdge;
     private boolean toBeUpdated=false;
-    public PathAdaptiveAStarShortestPath(Graph<V, E> graph) {
+    public MovingTargetAdaptiveAStarShortestPath(Graph<V, E> graph) {
         super(graph);
     }
 
@@ -38,18 +38,22 @@ public class PathAdaptiveAStarShortestPath<V,E> extends AStarShortestPath<V,E> i
         gScoreMap = new HashMap<V, Double>();
         hScoreMap = new HashMap<V, Double>();
         cameFrom=new HashMap<V,E>();
+        deltah = new HashMap<>();
         search = new HashMap<V,Integer>();
         pathToCost = new HashMap<>();
-        nextstate = new HashMap<V, V>();
+        nextstate = new HashMap<V,V>();
         backstate = new HashMap<V,V>();
         numberOfExpandedNodes =0;
         path=null;
         for(V s : graph.vertexSet()) {
             search.put(s, 0);
-            gScoreMap.put(s,0.0);
-            hScoreMap.put(s,0.0);
-
+            //gScoreMap.put(s,0.0);
+            //hScoreMap.put(s,0.0);
+            backstate.put(s,null);
+            nextstate.put(s,null);
+            cameFrom.put(s, null);
         }
+        deltah.put(1, 0.0);
     }
 
     protected void initializeState(V s){
@@ -59,6 +63,8 @@ public class PathAdaptiveAStarShortestPath<V,E> extends AStarShortestPath<V,E> i
         }else if(!search.get(s).equals(counter)){
             if( pathToCost.containsKey(search.get(s)) && gScoreMap.get(s) + hScoreMap.get(s) < pathToCost.get(search.get(s)))
                 hScoreMap.put(s,pathToCost.get(search.get(s)) - gScoreMap.get(s));
+            hScoreMap.put(s, hScoreMap.get(s) - (deltah.get(counter) - deltah.get(search.get(s))));
+            hScoreMap.put(s, Math.max(hScoreMap.get(s), admissibleHeuristic.getCostEstimate(s, goal)));
             gScoreMap.put(s,Double.POSITIVE_INFINITY);
         }
         search.put(s,counter);
@@ -78,11 +84,11 @@ public class PathAdaptiveAStarShortestPath<V,E> extends AStarShortestPath<V,E> i
 
     private void CleanPath(V s){
         V aux;
-        while(backstate.containsKey(s)) {
+        while(backstate.get(s)!=null) {
             aux = backstate.get(s);
-            backstate.remove(s);
-            cameFrom.remove(s);
-            nextstate.remove(aux);
+            backstate.put(s,null);
+            cameFrom.put(s,null);
+            nextstate.put(aux,null);
             s = aux;
         }
     }
@@ -91,6 +97,20 @@ public class PathAdaptiveAStarShortestPath<V,E> extends AStarShortestPath<V,E> i
         if(cameFrom.containsKey(s))
             return Graphs.getOppositeVertex(graph, cameFrom.get(s), s);
         return null;
+    }
+
+    protected GraphPath<V, E> buildGraphPath(V startVertex, V targetVertex, double pathLength){
+        List<E> edgeList = this.buildPath(targetVertex);
+        return new GraphPathImpl<V, E>(graph, startVertex, targetVertex, edgeList, pathLength);
+    }
+
+    private List<E> buildPath(V currentNode){
+        if(cameFrom.containsKey(currentNode) && cameFrom.get(currentNode)!=null){
+            List<E> path = buildPath(Graphs.getOppositeVertex(graph, cameFrom.get(currentNode), currentNode));
+            path.add(cameFrom.get(currentNode));
+            return path;
+        }else
+            return new ArrayList<E>();
     }
 
     private boolean ComputePath(){
@@ -103,16 +123,16 @@ public class PathAdaptiveAStarShortestPath<V,E> extends AStarShortestPath<V,E> i
             else if (graph instanceof DirectedGraph)
                 outgoingEdges = ((DirectedGraph) graph).outgoingEdgesOf(currentNode.getData());
 
-            if(currentNode.getData().equals(goal) || nextstate.containsKey(currentNode.getData())){
-                pathToCost.put(counter, gScoreMap.get(currentNode.getData()) + hScoreMap.get(currentNode.getData()));
-                CleanPath(currentNode.getData());
-                MakePath(currentNode.getData());
+            if(currentNode.getData().equals(goal) /*|| nextstate.get(currentNode.getData())!= null*/){
+                //pathToCost.put(counter, gScoreMap.get(currentNode.getData()) + hScoreMap.get(currentNode.getData()));
+               // CleanPath(currentNode.getData());
+                //MakePath(currentNode.getData());
                 path=this.buildGraphPath(start,goal,currentNode.getKey());
                 return true;
             }
             for(E edge : outgoingEdges){
                 V successor = Graphs.getOppositeVertex(graph, edge, currentNode.getData());
-                if(successor == currentNode.getData() || closedList.contains(successor)) continue;
+                if(successor.equals(currentNode.getData()) || closedList.contains(successor)) continue;
                 initializeState(successor);
                 double gScore_current = gScoreMap.get(currentNode.getData());
                 double tentativeGScore = gScore_current + graph.getEdgeWeight(edge);
@@ -125,6 +145,7 @@ public class PathAdaptiveAStarShortestPath<V,E> extends AStarShortestPath<V,E> i
                 if (!vertexToHeapNodeMap.containsKey(successor)) {
                     FibonacciHeapNode<V> heapNode=new FibonacciHeapNode<V>(successor);
                     openList.insert(heapNode, fScore);
+
                     vertexToHeapNodeMap.put(successor, heapNode);
                 }else{
                     openList.decreaseKey(vertexToHeapNodeMap.get(successor), fScore);
@@ -136,6 +157,8 @@ public class PathAdaptiveAStarShortestPath<V,E> extends AStarShortestPath<V,E> i
             closedList.add(currentNode.getData());
 
         }
+        //if(openList.isEmpty()) return false;
+        //return true;
         return false;
     }
 
@@ -170,6 +193,7 @@ public class PathAdaptiveAStarShortestPath<V,E> extends AStarShortestPath<V,E> i
         start = sourceVertex;
         goal= targetVertex;
         path=null;
+
         if(!start.equals(goal)) {
             counter++;
             initializeState(start);
@@ -179,10 +203,12 @@ public class PathAdaptiveAStarShortestPath<V,E> extends AStarShortestPath<V,E> i
             openList.clear();
             closedList.clear();
             vertexToHeapNodeMap.clear();
+            cameFrom.clear();
             openList.insert(heapNode, CalculateKey(heapNode.getData()));
             vertexToHeapNodeMap.put(start, heapNode);
             if(!ComputePath())
                 path=null;
+            else pathToCost.put(counter, gScoreMap.get(goal));
             if(toBeUpdated)
                 makeUpdates();
             //updateHValue();
@@ -191,5 +217,15 @@ public class PathAdaptiveAStarShortestPath<V,E> extends AStarShortestPath<V,E> i
         return null;
     }
 
+
+    public void restoreCoherence(V newGoal){
+        if(counter<1) return;
+        if(!goal.equals(newGoal)) {
+            initializeState(newGoal);
+            if(gScoreMap.get(newGoal) + hScoreMap.get(newGoal) < pathToCost.get(counter))
+                hScoreMap.put(newGoal, pathToCost.get(counter) - gScoreMap.get(newGoal));
+            deltah.put(counter+1, deltah.get(counter) + hScoreMap.get(newGoal));
+        }else deltah.put(counter+1, deltah.get(counter));
+    }
 
 }

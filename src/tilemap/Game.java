@@ -1,6 +1,7 @@
 package tilemap;
 
 import tilemap.jgrapht.alg.AStarShortestPath;
+import tilemap.jgrapht.alg.BidirectionalAStarShortestPath;
 import tilemap.jgrapht.alg.ThetaStarShortestPath;
 import tilemap.jgrapht.graph.DefaultEdge;
 
@@ -89,8 +90,8 @@ public class Game extends Canvas{
         player.setGameMap(gameMap);
         player.spawn();
         controller= new GameController( this, player);
-        enemies.add(new Entity("#", gameMap, new ThetaStarShortestPath<Integer, DefaultEdge>(gameMap.getGraph())));
-        enemies.add(new Entity("§", gameMap, new AStarShortestPath<Integer, DefaultEdge>(gameMap.getGraph())));
+        enemies.add(new Entity("#", gameMap, new BidirectionalAStarShortestPath<Integer, DefaultEdge>(gameMap.getGraph())));
+        enemies.add(new Entity("§", gameMap, new BidirectionalAStarShortestPath<Integer, DefaultEdge>(gameMap.getGraph())));
         //for(Entity e : enemies)
         //    e.spawn();
 
@@ -149,7 +150,7 @@ public class Game extends Canvas{
 
                 //System.out.println("(FPS: "+fps+")");
                 for(Entity e : enemies)
-                    e.move();
+                    //e.move();
                 lastFpsTime -= 1000000000/2;
                 fps = 0;
 
@@ -182,8 +183,8 @@ public class Game extends Canvas{
         for(Entity e : enemies) {
             e.setGameMap(gameMap);
             e.spawn();
-            if(e.getImage().equals("#")) e.setPath(new ThetaStarShortestPath<Integer, DefaultEdge>(gameMap.getGraph()));
-            else e.setPath(new AStarShortestPath<Integer, DefaultEdge>(gameMap.getGraph()));
+            if(e.getImage().equals("#")) e.setPath(new BidirectionalAStarShortestPath<Integer, DefaultEdge>(gameMap.getGraph()));
+            else e.setPath(new BidirectionalAStarShortestPath<Integer, DefaultEdge>(gameMap.getGraph()));
             if(gameMap.lineOfSight(player.getCoords()[0], player.getCoords()[1], e.getX(), e.getY()))
                 System.out.println("player is in the lof of "+ e.getImage());
         }

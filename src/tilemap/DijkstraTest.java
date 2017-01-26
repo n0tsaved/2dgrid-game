@@ -1,0 +1,44 @@
+package tilemap;
+
+import tilemap.jgrapht.Graph;
+import tilemap.jgrapht.GraphPath;
+import tilemap.jgrapht.Graphs;
+import tilemap.jgrapht.alg.DijkstraShortestPath;
+import tilemap.jgrapht.graph.DefaultEdge;
+
+import java.util.HashMap;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.Map;
+
+/**
+ * Created by notsaved on 1/23/17.
+ */
+public class DijkstraTest extends Test {
+
+    public DijkstraTest(GameMap m, List<Point[]> points){
+        super(m,points);
+    }
+
+    @Override
+    public void run() {
+        GraphPath<Integer,DefaultEdge> path;
+        long now;
+        Integer next;
+        for(Point[] p : points){
+            elapsedTime.put(p, new LinkedList<>());
+            expandedCells.put(p, new LinkedList<>());
+            next= p[0].toNode();
+            while(!next.equals(p[1].toNode())) {
+                now = System.currentTimeMillis();
+                pathfinder = new DijkstraShortestPath<Integer, DefaultEdge>(map.getGraph(), next, p[1].toNode());
+                elapsedTime.get(p).add(System.currentTimeMillis() - now);
+                expandedCells.get(p).add(pathfinder.getNumberOfExpandedNodes());
+                path=pathfinder.getShortestPath(next,p[1].toNode(),new ManhattanDistance());
+                next=Graphs.getOppositeVertex(map.getGraph(), path.getEdgeList().get(0), next);
+            }
+        }
+    }
+
+
+}

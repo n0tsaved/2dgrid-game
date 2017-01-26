@@ -1,5 +1,6 @@
 package tilemap;
 
+import tilemap.Test.ManhattanDistance;
 import tilemap.jgrapht.alg.AStarShortestPath;
 import tilemap.jgrapht.alg.BidirectionalAStarShortestPath;
 import tilemap.jgrapht.alg.ThetaStarShortestPath;
@@ -10,12 +11,13 @@ import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
 import java.awt.image.BufferStrategy;
 import java.util.LinkedList;
+import java.util.Random;
 
 public class Game extends Canvas{
     private long lastFpsTime;
     /** The buffered strategy used for accelerated rendering */
     private BufferStrategy strategy;
-
+    private static Random r = new Random(GameMap.WIDTH*GameMap.HEIGHT);
 
     /** The gameMap our player will wander round */
     /** The player entity that will be controlled with cursors */
@@ -197,7 +199,32 @@ public class Game extends Canvas{
      */
     public static void main(String[] argv) throws InterruptedException {
 
-        final Game g = new Game();
-        g.gameLoop();
+        //final Game g = new Game();
+        //g.gameLoop();
+        LinkedList<Point[]> points = new LinkedList<>();
+        GameMap m = new GameMap(null, new OutdoorMapGenerator());
+
+        for(int i=0; i<20; i++){
+            Point a, b;
+            AStarShortestPath<Integer, DefaultEdge> pathfinder = new AStarShortestPath<>(m.getGraph());
+            do{
+                a=chooseRandomPoint(m);
+                b=chooseRandomPoint(m);
+            }while(pathfinder.getShortestPath(a.toNode(),b.toNode(),new ManhattanDistance())==null);
+            Point[] pair = new Point[2];
+            pair[0] = a;
+            pair[1] = b;
+            points.add(pair);
+        }
+        Test t = new DijkstraTest(m, points);
+        t.run();
+        System.out.println(t.getTotalExpandedCells());
+    }
+
+    private static Point chooseRandomPoint(GameMap map){
+        int node = r.nextInt();
+        while(map.blocked(node%map.WIDTH, node/map.WIDTH))
+            node=r.nextInt();
+        return new Point(node%map.WIDTH,node/map.WIDTH);
     }
 }

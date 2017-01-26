@@ -39,6 +39,8 @@
 package tilemap.jgrapht.alg;
 
 import tilemap.jgrapht.*;
+import tilemap.jgrapht.alg.interfaces.AStarAdmissibleHeuristic;
+import tilemap.jgrapht.alg.interfaces.Pathfinder;
 import tilemap.jgrapht.graph.*;
 import tilemap.jgrapht.traverse.*;
 
@@ -55,12 +57,13 @@ import java.util.List;
  * @author John V. Sichi
  * @since Sep 2, 2003
  */
-public final class DijkstraShortestPath<V, E>
+public final class DijkstraShortestPath<V, E> implements Pathfinder<V,E>
 {
 
 
     private GraphPath<V, E> path;
-
+    private int numberOfExpandedNode=0;
+    private Graph<V,E> graph;
 
 
     /**
@@ -96,6 +99,7 @@ public final class DijkstraShortestPath<V, E>
         V endVertex,
         double radius)
     {
+        this.graph = graph;
         if (!graph.containsVertex(endVertex)) {
             throw new IllegalArgumentException(
                 "graph must contain the end vertex");
@@ -104,8 +108,11 @@ public final class DijkstraShortestPath<V, E>
         ClosestFirstIterator<V, E> iter =
             new ClosestFirstIterator<V, E>(graph, startVertex, radius);
 
+        numberOfExpandedNode = 0;
+
         while (iter.hasNext()) {
             V vertex = iter.next();
+            numberOfExpandedNode++;
 
             if (vertex.equals(endVertex)) {
                 createEdgeList(graph, iter, startVertex, endVertex);
@@ -167,7 +174,7 @@ public final class DijkstraShortestPath<V, E>
      *
      * @return List of Edges, or null if no path exists
      */
-    public static <V, E> List<E> findPathBetween(
+    public static <V, E> List<E> getShortestPath(
         Graph<V, E> graph,
         V startVertex,
         V endVertex)
@@ -211,6 +218,37 @@ public final class DijkstraShortestPath<V, E>
                 endVertex,
                 edgeList,
                 pathLength);
+    }
+
+    @Override
+    public GraphPath<V, E> getShortestPath(V sourceVertex, V targetVertex, AStarAdmissibleHeuristic<V> admissibleHeuristic) {
+        if (!graph.containsVertex(targetVertex)) {
+            throw new IllegalArgumentException(
+                    "graph must contain the end vertex");
+        }
+
+        ClosestFirstIterator<V, E> iter =
+                new ClosestFirstIterator<V, E>(graph, sourceVertex, Double.POSITIVE_INFINITY);
+
+        numberOfExpandedNode = 0;
+
+        while (iter.hasNext()) {
+            V vertex = iter.next();
+            numberOfExpandedNode++;
+
+            if (vertex.equals(targetVertex)) {
+                createEdgeList(graph, iter, sourceVertex, targetVertex);
+                return path;
+            }
+        }
+
+        path = null;
+        return path;
+    }
+
+    @Override
+    public int getNumberOfExpandedNodes() {
+        return numberOfExpandedNode;
     }
 }
 

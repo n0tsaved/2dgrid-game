@@ -3,7 +3,6 @@ package tilemap.jgrapht.alg;
 import tilemap.jgrapht.*;
 import tilemap.jgrapht.alg.interfaces.AStarAdmissibleHeuristic;
 import tilemap.jgrapht.alg.interfaces.Pathfinder;
-import tilemap.jgrapht.graph.DefaultEdge;
 import tilemap.jgrapht.graph.GraphPathImpl;
 import tilemap.jgrapht.util.FibonacciHeap;
 import tilemap.jgrapht.util.FibonacciHeapNode;
@@ -85,7 +84,7 @@ public class BidirectionalAStarShortestPath<V,E>  implements Pathfinder<V,E> {
                         admissibleHeuristic.getCostEstimate(backwardMinNode, sourceVertex);
 
                 if(bestPathLength <= Math.max(forwardDistance,backwardDistance))
-                    return buildGraphPath(sourceVertex, targetVertex, forwardDistance + backwardDistance);
+                    return buildGraphPath(sourceVertex, targetVertex);
             }
 
             if(forwardOpenList.size() + forwardClosedList.size() <
@@ -220,7 +219,7 @@ public class BidirectionalAStarShortestPath<V,E>  implements Pathfinder<V,E> {
         }
     }
 
-    private GraphPath<V,E> buildGraphPath(V sourceVertex, V targetVertex, double pathLength) {
+    private GraphPath<V,E> buildGraphPath(V sourceVertex, V targetVertex) {
         //List<E> edgelistA = buildForwardPath(targetVertex);
         //List<E> edgelistB = buildBackwardPath(sourceVertex);
         //Collections.reverse(edgelistB);
@@ -246,7 +245,7 @@ public class BidirectionalAStarShortestPath<V,E>  implements Pathfinder<V,E> {
                 current = backwardCameFrom.get(node);
             }
         }
-        return new GraphPathImpl<V, E>(graph, sourceVertex, targetVertex, edgelist, pathLength);
+        return new GraphPathImpl<V, E>(graph, sourceVertex, targetVertex, edgelist, bestPathLength);
 
     }
 }

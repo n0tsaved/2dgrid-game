@@ -1,8 +1,10 @@
 package tilemap;
 
+import tilemap.Test.OctileDistance;
 import tilemap.Test.ManhattanDistance;
 import tilemap.jgrapht.alg.AStarShortestPath;
 import tilemap.jgrapht.alg.BidirectionalAStarShortestPath;
+import tilemap.jgrapht.alg.DijkstraShortestPath;
 import tilemap.jgrapht.alg.ThetaStarShortestPath;
 import tilemap.jgrapht.graph.DefaultEdge;
 
@@ -200,31 +202,67 @@ public class Game extends Canvas{
     public static void main(String[] argv) throws InterruptedException {
 
         //final Game g = new Game();
-        //g.gameLoop();
-        LinkedList<Point[]> points = new LinkedList<>();
-        GameMap m = new GameMap(null, new OutdoorMapGenerator());
-
-        for(int i=0; i<20; i++){
-            Point a, b;
-            AStarShortestPath<Integer, DefaultEdge> pathfinder = new AStarShortestPath<>(m.getGraph());
-            do{
-                a=chooseRandomPoint(m);
-                b=chooseRandomPoint(m);
-            }while(pathfinder.getShortestPath(a.toNode(),b.toNode(),new ManhattanDistance())==null);
-            Point[] pair = new Point[2];
-            pair[0] = a;
-            pair[1] = b;
-            points.add(pair);
-        }
-        Test t = new DijkstraTest(m, points);
-        t.run();
-        System.out.println(t.getTotalExpandedCells());
+       // g.gameLoop();
+        System.out.println("\nIndoor Map\n");
+       TestPerMap(new IndoorMapGenerator());
+        System.out.println("\nOutdoor Map\n");
+        TestPerMap(new OutdoorMapGenerator());
+        System.out.println("\nDungeon Map\n");
+        TestPerMap(new DungeonMapGenerator());
     }
 
     private static Point chooseRandomPoint(GameMap map){
-        int node = r.nextInt();
+        int node = r.nextInt(GameMap.HEIGHT*GameMap.WIDTH);
         while(map.blocked(node%map.WIDTH, node/map.WIDTH))
-            node=r.nextInt();
+            node=r.nextInt(GameMap.HEIGHT*GameMap.WIDTH);
         return new Point(node%map.WIDTH,node/map.WIDTH);
+    }
+
+    private static void TestPerMap(MapGenerator mapgnrtr){
+
+        GameMap m = new GameMap(null, mapgnrtr);
+        LinkedList<Point[]> points = new LinkedList<>();
+
+
+        for(int i=0; i<20; i++) {
+            Point a, b;
+            //  AStarShortestPath<Integer, DefaultEdge> pathfinder = new AStarShortestPath<>(m.getGraph());
+            DijkstraShortestPath<Integer, DefaultEdge> pathfinder;
+            if (mapgnrtr.getClass() == IndoorMapGenerator.class) {
+                do {
+                    // System.out.println("1");
+
+                    a = chooseRandomPoint(m);
+                    b = chooseRandomPoint(m);
+                    pathfinder = new DijkstraShortestPath<Integer, DefaultEdge>(m.getGraph(), a.toNode(), b.toNode());
+
+                } while (pathfinder.getPath() == null);
+                Point[] pair = new Point[2];
+                pair[0] = a;
+                pair[1] = b;
+                points.add(pair);
+
+            }else{
+                a = chooseRandomPoint(m);
+                b = chooseRandomPoint(m);
+                Point[] pair = new Point[2];
+                pair[0] = a;
+                pair[1] = b;
+                points.add(pair);
+            }
+        }
+        Test t1 = new DijkstraTest(m, points);
+        Test t2 = new AStarTest(m, points);
+        Test t3 = new BidirectionalAstarTest(m, points);System.out.println("Testing Dijkstra...");
+        t1.run(); System.out.println("Testing A*...");
+        t2.run(); System.out.println("Testing Bidirectional A*...");
+        t3.run();
+        System.out.println("Dijkstra\nTotal Expandend Cell: "+t1.getTotalExpandedCells()+"; Average Expandend Cell: "+t1.getExpandedCellPerRun()+
+                "; Elapsed Time: "+t1.getTotalElapsedTime()+"ms; Average Elapsed Time: "+String.valueOf(t1.getElapsedTimePerRun())+"ms");
+        System.out.println("A*\nTotal Expandend Cell: "+t2.getTotalExpandedCells()+"; Average Expandend Cell: "+t2.getExpandedCellPerRun()+
+                "; Elapsed Time: "+t2.getTotalElapsedTime()+"ms; Average Elapsed Time: "+String.valueOf(t2.getElapsedTimePerRun())+"ms");
+        System.out.println("Bidirectional A*\nTotal Expandend Cell: "+t3.getTotalExpandedCells()+"; Average Expandend Cell: "+t3.getExpandedCellPerRun()+
+                "; Elapsed Time: "+t3.getTotalElapsedTime()+"ms; Average Elapsed Time: "+String.valueOf(t3.getElapsedTimePerRun())+"ms");
+
     }
 }

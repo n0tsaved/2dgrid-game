@@ -97,7 +97,8 @@ public class Entity {
         Tile[][] map = gameMap.getData();
         if(AStarpath == null) return;
         for(Integer i : Graphs.getPathVertexList(AStarpath))
-            map[i%gameMap.WIDTH][i/gameMap.WIDTH].isAstarPath=true;
+            if(!map[i%gameMap.WIDTH][i/gameMap.WIDTH].isFrontier)
+                map[i%gameMap.WIDTH][i/gameMap.WIDTH].isAstarPath=true;
 //        for(Integer i : Graphs.getPathVertexList(ThetaStarpath))
 //            map[i%gameMap.WIDTH][i/gameMap.WIDTH].isThetaPath=true;
     }
@@ -161,7 +162,7 @@ public class Entity {
         //if(!pathToFollow.get(pathToFollow.size()-1).equals(gameMap.getPlayerNode()))
         //AStarpath=paastarPathFind.getShortestPath(new Integer(y*GameMap.WIDTH+x), new Integer(gameMap.getPlayerNode()), new ManhattanDistance());
         pathfinder = new BidirectionalAStarShortestPath<Integer,DefaultEdge>(gameMap.getGraph());
-        AStarpath = pathfinder.getShortestPath(new Integer(y*GameMap.WIDTH+x), new Integer(gameMap.getPlayerNode()), new ManhattanDistance());
+        AStarpath = pathfinder.getShortestPath(new Integer(y*GameMap.WIDTH+x), new Integer(gameMap.getPlayerNode()), new OctileDistance());
 
         colorPath();
     }
@@ -199,6 +200,22 @@ public class Entity {
             //System.out.println("Source: [" +sourceX+","+sourceY+"] Target: ["+
             //        targetX+","+targetY+"] EstimatedCost: "+Math.abs(sourceX - targetX)+Math.abs(sourceY - targetY));
             return Math.abs(sourceX - targetX)+Math.abs(sourceY - targetY);
+        }
+    }
+
+    private class OctileDistance implements AStarAdmissibleHeuristic<Integer> {
+
+        @Override
+        public double getCostEstimate(Integer sourceVertex, Integer targetVertex) {
+            int sourceX, sourceY, targetX, targetY;
+            sourceX=sourceVertex%GameMap.WIDTH;
+            sourceY=sourceVertex/GameMap.WIDTH;
+            targetX=targetVertex%GameMap.WIDTH;
+            targetY=targetVertex/GameMap.WIDTH;
+            //System.out.println("Source: [" +sourceX+","+sourceY+"] Target: ["+
+            //        targetX+","+targetY+"] EstimatedCost: "+Math.abs(sourceX - targetX)+Math.abs(sourceY - targetY));
+            return Math.abs(Math.abs(sourceX - targetX) - Math.abs(sourceY - targetY))+
+                    Math.sqrt(2)*Math.min(Math.abs(sourceX - targetX), Math.abs(sourceY - targetY));
         }
     }
 }

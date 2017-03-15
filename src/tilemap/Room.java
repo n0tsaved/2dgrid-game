@@ -18,6 +18,7 @@ public class Room implements TileMapElement{
         coords[1]=((height)/2) +y;
         return coords;
     }
+
     public boolean intersect(Object other){
         if(other.getClass()!=Room.class)
             return false;

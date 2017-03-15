@@ -22,8 +22,8 @@ public abstract class Test  {
 
     protected GameMap map;
     protected List<Point[]> points;
-    protected Map<Point[], List<Long>> elapsedTime = new HashMap<>();
-    protected Map<Point[], List<Integer>> expandedCells = new HashMap<>();
+    protected Map<Point[], Long> elapsedTime = new HashMap<>();
+    protected Map<Point[], Integer> expandedCells = new HashMap<>();
     protected Pathfinder<Integer, DefaultEdge> pathfinder;
     protected String result;
    /* private Map<Point[],Long> executionTime = new HashMap<>();
@@ -79,13 +79,29 @@ public abstract class Test  {
         }
     }
 
+    protected class OctileDistance implements AStarAdmissibleHeuristic<Integer> {
+
+        @Override
+        public double getCostEstimate(Integer sourceVertex, Integer targetVertex) {
+            int sourceX, sourceY, targetX, targetY;
+            sourceX=sourceVertex%GameMap.WIDTH;
+            sourceY=sourceVertex/GameMap.WIDTH;
+            targetX=targetVertex%GameMap.WIDTH;
+            targetY=targetVertex/GameMap.WIDTH;
+            //System.out.println("Source: [" +sourceX+","+sourceY+"] Target: ["+
+            //        targetX+","+targetY+"] EstimatedCost: "+Math.abs(sourceX - targetX)+Math.abs(sourceY - targetY));
+            return Math.abs(Math.abs(sourceX - targetX) - Math.abs(sourceY - targetY))+
+                    Math.sqrt(2)*Math.min(Math.abs(sourceX - targetX), Math.abs(sourceY - targetY));
+        }
+    }
+
+
     public int getTotalExpandedCells(){
         //int length=0;
         int tot =0;
         for(Point[] p : points){
             //length = expandedCells.get(p).size();
-            for(int i : expandedCells.get(p))
-                tot+=i;
+                tot+=expandedCells.get(p);
             //subtot = subtot / length;
             //tot+=subtot;
         }
@@ -93,38 +109,39 @@ public abstract class Test  {
     }
 
     public double getExpandedCellPerRun(){
-        int length=0, tot=0;
-        for(Point[] p: points)
+        double  tot=0;
+    /*    for(Point[] p: points)
             length+=expandedCells.get(p).size();
         for(Point[] p : points)
             for(int i: expandedCells.get(p))
-                tot+=i;
-        return tot/length;
+                tot+=i;*/
+    tot = getTotalExpandedCells();
+        return tot/points.size();
     }
 
-    public long getTotalElapsedTime(){
-        long elapsed = 0;
+    public double getTotalElapsedTime(){
+        double elapsed = 0;
         for(Point[] p : points)
-            for(long i : elapsedTime.get(p))
-                elapsed+=i;
+          //  for(long i : elapsedTime.get(p))
+                elapsed+=elapsedTime.get(p);
         return elapsed;
     }
 
     public double getElapsedTimePerRun() {
         int length = 0;
-        long tot = 0;
-        for (Point[] p : points) {
-            length += elapsedTime.get(p).size();
-            for(long i : elapsedTime.get(p))
-                tot+=i;
-        }
-        return tot/length;
+        double tot = 0;
+      //  for (Point[] p : points) {
+        //    length += elapsedTime.get(p).size();
+          //  for(long i : elapsedTime.get(p))
+                tot=getTotalElapsedTime();
+        //}
+        return tot/points.size();
     }
 
-    public double getTotalMoves(){
+   /* public double getTotalMoves(){
         int moves=0;
         for(Point[] p: points)
             moves+=expandedCells.get(p).size();
         return moves;
-    }
+    }*/
 }

@@ -1,11 +1,7 @@
-/* ==========================================
+/*
+ * (C) Copyright 1999-2017, by Nathan Fiedler and Contributors.
+ *
  * JGraphT : a free Java graph-theory library
- * ==========================================
- *
- * Project Info:  http://jgrapht.sourceforge.net/
- * Project Creator:  Barak Naveh (barak_naveh@users.sourceforge.net)
- *
- * (C) Copyright 2003-2008, by Barak Naveh and Contributors.
  *
  * This program and the accompanying materials are dual-licensed under
  * either
@@ -19,46 +15,19 @@
  * (b) the terms of the Eclipse Public License v1.0 as published by
  * the Eclipse Foundation.
  */
-/* --------------------------
- * FibonnaciHeapNode.java
- * --------------------------
- * (C) Copyright 1999-2008, by Nathan Fiedler and Contributors.
- *
- * Original Author:  Nathan Fiedler
- * Contributor(s):   John V. Sichi
- *
- * $Id$
- *
- * Changes
- * -------
- * 03-Sept-2003 : Adapted from Nathan Fiedler (JVS);
- *
- *      Name    Date            Description
- *      ----    ----            -----------
- *      nf      08/31/97        Initial version
- *      nf      09/07/97        Removed FibHeapData interface
- *      nf      01/20/01        Added synchronization
- *      nf      01/21/01        Made Node an inner class
- *      nf      01/05/02        Added clear(), renamed empty() to
- *                              isEmpty(), and renamed printHeap()
- *                              to toString()
- *      nf      01/06/02        Removed all synchronization
- *      JVS     06/24/06        Generics
- *
- */
 package tilemap.jgrapht.util;
 
 /**
- * Implements a node of the Fibonacci heap. It holds the information necessary
- * for maintaining the structure of the heap. It also holds the reference to the
- * key value (which is used to determine the heap structure).
+ * Implements a node of the Fibonacci heap. It holds the information necessary for maintaining the
+ * structure of the heap. It also holds the reference to the key value (which is used to determine
+ * the heap structure).
+ *
+ * @param <T> node data type
  *
  * @author Nathan Fiedler
  */
 public class FibonacciHeapNode<T>
 {
-
-
     /**
      * Node data.
      */
@@ -67,26 +36,25 @@ public class FibonacciHeapNode<T>
     /**
      * first child node
      */
-    tilemap.jgrapht.util.FibonacciHeapNode<T> child;
+    FibonacciHeapNode<T> child;
 
     /**
      * left sibling node
      */
-    tilemap.jgrapht.util.FibonacciHeapNode<T> left;
+    FibonacciHeapNode<T> left;
 
     /**
      * parent node
      */
-    tilemap.jgrapht.util.FibonacciHeapNode<T> parent;
+    FibonacciHeapNode<T> parent;
 
     /**
      * right sibling node
      */
-    tilemap.jgrapht.util.FibonacciHeapNode<T> right;
+    FibonacciHeapNode<T> right;
 
     /**
-     * true if this node has had a child removed since this node was added to
-     * its parent
+     * true if this node has had a child removed since this node was added to its parent
      */
     boolean mark;
 
@@ -100,22 +68,15 @@ public class FibonacciHeapNode<T>
      */
     int degree;
 
-
-
     /**
-     * Default constructor. Initializes the right and left pointers, making this
-     * a circular doubly-linked list.
+     * Constructs a new node.
      *
      * @param data data for this node
      */
     public FibonacciHeapNode(T data)
     {
-        right = this;
-        left = this;
         this.data = data;
     }
-
-
 
     /**
      * Obtain the key for this node.
@@ -129,6 +90,8 @@ public class FibonacciHeapNode<T>
 
     /**
      * Obtain the data for this node.
+     *
+     * @return the data
      */
     public final T getData()
     {
@@ -140,7 +103,8 @@ public class FibonacciHeapNode<T>
      *
      * @return string representing this object
      */
-    @Override public String toString()
+    @Override
+    public String toString()
     {
         return Double.toString(key);
     }

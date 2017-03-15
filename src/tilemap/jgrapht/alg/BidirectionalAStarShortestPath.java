@@ -1,5 +1,6 @@
 package tilemap.jgrapht.alg;
 
+import tilemap.GameMap;
 import tilemap.jgrapht.*;
 import tilemap.jgrapht.alg.interfaces.AStarAdmissibleHeuristic;
 import tilemap.jgrapht.alg.interfaces.Pathfinder;
@@ -28,7 +29,7 @@ public class BidirectionalAStarShortestPath<V,E>  implements Pathfinder<V,E> {
     //Reference to the admissible heuristic
     protected AStarAdmissibleHeuristic<V> admissibleHeuristic;
     //Counter which keeps track of the number of expanded nodes
-    protected int numberOfExpandedNodes;
+    protected int numberOfExpandedNodes, forwardRun, backwardRun;
 
     protected V touchNode;
 
@@ -59,6 +60,7 @@ public class BidirectionalAStarShortestPath<V,E>  implements Pathfinder<V,E> {
 
     @Override
     public GraphPath<V, E> getShortestPath(V sourceVertex, V targetVertex, AStarAdmissibleHeuristic<V> admissibleHeuristic) {
+
         if(!graph.containsVertex(sourceVertex) || !graph.containsVertex(targetVertex))
             throw new IllegalArgumentException("Source or target vertex not contained in the graph!");
         if(sourceVertex.equals(targetVertex)) return null;
@@ -74,21 +76,17 @@ public class BidirectionalAStarShortestPath<V,E>  implements Pathfinder<V,E> {
 
         while(!forwardOpenList.isEmpty() && !backwardOpenList.isEmpty()){
             if(touchNode != null){
-                V forwardMinNode = forwardOpenList.min().getData();
-                V backwardMinNode = backwardOpenList.min().getData();
 
-                double forwardDistance = forwardGScoreMap.get(forwardMinNode) +
-                        admissibleHeuristic.getCostEstimate(forwardMinNode, targetVertex);
+                double forwardDistance = forwardOpenList.min().getKey();
+                double backwardDistance = backwardOpenList.min().getKey();
 
-                double backwardDistance = backwardGScoreMap.get(backwardMinNode) +
-                        admissibleHeuristic.getCostEstimate(backwardMinNode, sourceVertex);
-
-                if(bestPathLength <= Math.max(forwardDistance,backwardDistance))
-                    return buildGraphPath(sourceVertex, targetVertex);
+                if(bestPathLength <= Math.max(forwardDistance,backwardDistance)){
+                    //System.out.println("forward: "+forwardRun+", backward: "+backwardRun);
+                    GameMap.data[(Integer) touchNode%GameMap.WIDTH][(Integer) touchNode/GameMap.WIDTH].isFrontier = true;
+                    return buildGraphPath(sourceVertex, targetVertex);}
             }
 
-            if(forwardOpenList.size() + forwardClosedList.size() <
-                    backwardOpenList.size() + backwardClosedList.size())
+            if(forwardOpenList.size() /*+forwardClosedList.size()*/ <= backwardOpenList.size() /*+ forwardClosedList.size()*/)
                 expandForwardFrontier(targetVertex);
             else expandBackwardFrontier(sourceVertex);
         }
@@ -102,10 +100,11 @@ public class BidirectionalAStarShortestPath<V,E>  implements Pathfinder<V,E> {
 
     private void expandForwardFrontier(V endVertex) {
         numberOfExpandedNodes++;
+        forwardRun++;
 
         FibonacciHeapNode<V> currentNode = forwardOpenList.removeMin();
 
-        //forwardClosedList.add(currentNode.getData());
+        forwardClosedList.add(currentNode.getData());
 
         Set<E> outgoingEdges=null;
         if(graph instanceof UndirectedGraph)
@@ -146,25 +145,24 @@ public class BidirectionalAStarShortestPath<V,E>  implements Pathfinder<V,E> {
                 updateForwardFrontier(successor, tentativeGScore);
             }
         }
-        forwardClosedList.add(currentNode.getData());
+        //forwardClosedList.add(currentNode.getData());
     }
 
     private void updateForwardFrontier(V node, double nodeScore) {
-        if(backwardClosedList.contains(node)){
+        if(backwardVertexToHeapNodeMap.containsKey(node)){
             double pathLength = backwardGScoreMap.get(node) + nodeScore;
-            if(bestPathLength > pathLength){
-                bestPathLength = pathLength;
-                touchNode = node;
-            }
+            bestPathLength = Math.min(bestPathLength, pathLength);
+            touchNode = node;
         }
     }
 
     private void expandBackwardFrontier(V sourceVertex) {
         numberOfExpandedNodes++;
+        backwardRun++;
 
         FibonacciHeapNode<V> currentNode = backwardOpenList.removeMin();
 
-        //forwardClosedList.add(currentNode.getData());
+        backwardClosedList.add(currentNode.getData());
 
         Set<E> outgoingEdges=null;
         if(graph instanceof UndirectedGraph)
@@ -205,17 +203,15 @@ public class BidirectionalAStarShortestPath<V,E>  implements Pathfinder<V,E> {
                 updateBackwardFrontier(successor, tentativeGScore);
             }
         }
-        backwardClosedList.add(currentNode.getData());
+      //  backwardClosedList.add(currentNode.getData());
     }
 
     private void updateBackwardFrontier(V node, double nodeScore) {
-        if(forwardClosedList.contains(node)){
+        if(forwardVertexToHeapNodeMap.containsKey(node)){
             double pathLength = forwardGScoreMap.get(node) + nodeScore;
 
-            if(bestPathLength > pathLength){
-                bestPathLength = pathLength;
-                touchNode = node;
-            }
+            bestPathLength = Math.min(bestPathLength, pathLength);
+            touchNode = node;
         }
     }
 

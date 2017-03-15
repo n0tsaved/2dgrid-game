@@ -1,24 +1,20 @@
 package tilemap;
 
-import tilemap.jgrapht.Graph;
 import tilemap.jgrapht.GraphPath;
-import tilemap.jgrapht.Graphs;
-import tilemap.jgrapht.alg.DijkstraShortestPath;
+import tilemap.jgrapht.alg.BidirectionalAStarShortestPath;
 import tilemap.jgrapht.graph.DefaultEdge;
 
-import java.util.HashMap;
-import java.util.LinkedList;
 import java.util.List;
-import java.util.Map;
 
 /**
- * Created by notsaved on 1/23/17.
+ * Created by notsaved on 3/14/17.
  */
-public class DijkstraTest extends Test {
+public class BidirectionalAstarTest extends Test{
 
-    public DijkstraTest(GameMap m, List<Point[]> points){
+    public BidirectionalAstarTest(GameMap m, List<Point[]> points){
         super(m,points);
     }
+
 
     @Override
     public void run() {
@@ -37,13 +33,12 @@ public class DijkstraTest extends Test {
                 path=pathfinder.getShortestPath(next,p[1].toNode(),new ManhattanDistance());
                 next=Graphs.getOppositeVertex(map.getGraph(), path.getEdgeList().get(0), next);
             }*/
-           next = p[0].toNode();
-           now = System.currentTimeMillis();
-           pathfinder= new DijkstraShortestPath<Integer, DefaultEdge>(map.getGraph(), next, p[1].toNode());
-           elapsedTime.put(p,System.currentTimeMillis() - now);
-           expandedCells.put(p,pathfinder.getNumberOfExpandedNodes());
+            next = p[0].toNode();
+            pathfinder= new BidirectionalAStarShortestPath<>(map.getGraph());
+            now = System.currentTimeMillis();
+            pathfinder.getShortestPath(next,p[1].toNode(), new Test.OctileDistance());
+            elapsedTime.put(p,System.currentTimeMillis() - now);
+            expandedCells.put(p,pathfinder.getNumberOfExpandedNodes());
         }
     }
-
-
 }

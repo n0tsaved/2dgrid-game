@@ -142,7 +142,6 @@ public class AStarShortestPath<V,E> implements Pathfinder<V,E> {
 
     protected void expandNode(FibonacciHeapNode<V> currentNode, V endVertex){
         numberOfExpandedNodes++;
-
         Set<E> outgoingEdges=null;
         if(graph instanceof UndirectedGraph)
             outgoingEdges=graph.edgesOf(currentNode.getData());
@@ -152,24 +151,35 @@ public class AStarShortestPath<V,E> implements Pathfinder<V,E> {
 
         for(E edge : outgoingEdges){
             V successor = Graphs.getOppositeVertex(graph, edge, currentNode.getData());
-            if (successor == currentNode.getData() || closedList.contains(successor)) //Ignore self-loops or nodes which have already been expanded
+            if (successor == currentNode.getData()) //Ignore self-loops
                 continue;
 
             double gScore_current = gScoreMap.get(currentNode.getData());
             double tentativeGScore = gScore_current + graph.getEdgeWeight(edge);
+            double fScore= tentativeGScore + admissibleHeuristic.getCostEstimate(successor, endVertex);
+            if (vertexToHeapNodeMap.containsKey(successor)) { // We re-encountered a vertex. It's
+                // either in the open or closed list.
+                if (tentativeGScore >= gScoreMap.get(successor)) // Ignore path since it is
+                    // non-improving
+                    continue;
 
-            if(!vertexToHeapNodeMap.containsKey(successor) || tentativeGScore < gScoreMap.get(successor)){
                 cameFrom.put(successor, edge);
                 gScoreMap.put(successor, tentativeGScore);
 
-                double fScore= tentativeGScore + admissibleHeuristic.getCostEstimate(successor, endVertex);
-                if (!vertexToHeapNodeMap.containsKey(successor)) {
-                    FibonacciHeapNode<V> heapNode=new FibonacciHeapNode<V>(successor);
-                    openList.insert(heapNode, fScore);
-                    vertexToHeapNodeMap.put(successor, heapNode);
-                }else{
+                if (closedList.contains(successor)) { // it's in the closed list. Move node back to
+                    // open list, since we discovered a shorter
+                    // path to this node
+                    closedList.remove(successor);
+                    openList.insert(vertexToHeapNodeMap.get(successor), fScore);
+                } else { // It's in the open list
                     openList.decreaseKey(vertexToHeapNodeMap.get(successor), fScore);
                 }
+            } else { // We've encountered a new vertex.
+                cameFrom.put(successor, edge);
+                gScoreMap.put(successor, tentativeGScore);
+                FibonacciHeapNode<V> heapNode = new FibonacciHeapNode<>(successor);
+                openList.insert(heapNode, fScore);
+                vertexToHeapNodeMap.put(successor, heapNode);
             }
         }
     }

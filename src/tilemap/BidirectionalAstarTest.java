@@ -36,7 +36,7 @@ public class BidirectionalAstarTest extends Test{
             next = p[0].toNode();
             pathfinder= new BidirectionalAStarShortestPath<>(map.getGraph());
             now = System.currentTimeMillis();
-            pathfinder.getShortestPath(next,p[1].toNode(), new Test.OctileDistance());
+            pathfinder.getShortestPath(next,p[1].toNode(), new OctileDistance());
             elapsedTime.put(p,System.currentTimeMillis() - now);
             expandedCells.put(p,pathfinder.getNumberOfExpandedNodes());
         }

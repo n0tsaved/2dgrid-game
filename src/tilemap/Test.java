@@ -26,6 +26,8 @@ public abstract class Test  {
     protected Map<Point[], Integer> expandedCells = new HashMap<>();
     protected Pathfinder<Integer, DefaultEdge> pathfinder;
     protected String result;
+    protected double expandedNodeAverage;
+    protected double elapsedTimeAverage;
    /* private Map<Point[],Long> executionTime = new HashMap<>();
     private HashMap<Point[], List<Pathfinder<Integer, DefaultEdge>>> pathfinders = new HashMap<>();
 
@@ -109,33 +111,24 @@ public abstract class Test  {
     }
 
     public double getExpandedCellPerRun(){
-        double  tot=0;
-    /*    for(Point[] p: points)
-            length+=expandedCells.get(p).size();
-        for(Point[] p : points)
-            for(int i: expandedCells.get(p))
-                tot+=i;*/
-    tot = getTotalExpandedCells();
-        return tot/points.size();
+        if(expandedNodeAverage==0) {
+            expandedNodeAverage = getTotalExpandedCells()/points.size();
+        }
+        return expandedNodeAverage;
     }
 
     public double getTotalElapsedTime(){
         double elapsed = 0;
         for(Point[] p : points)
-          //  for(long i : elapsedTime.get(p))
-                elapsed+=elapsedTime.get(p);
+            elapsed+=elapsedTime.get(p);
         return elapsed;
     }
 
     public double getElapsedTimePerRun() {
-        int length = 0;
-        double tot = 0;
-      //  for (Point[] p : points) {
-        //    length += elapsedTime.get(p).size();
-          //  for(long i : elapsedTime.get(p))
-                tot=getTotalElapsedTime();
-        //}
-        return tot/points.size();
+        if(elapsedTimeAverage==0) {
+            elapsedTimeAverage= getTotalElapsedTime() / points.size();
+        }
+        return elapsedTimeAverage;
     }
 
    /* public double getTotalMoves(){
@@ -144,4 +137,25 @@ public abstract class Test  {
             moves+=expandedCells.get(p).size();
         return moves;
     }*/
+   public double getTimeStandardDeviation(){
+       return Math.sqrt(getTimeVariance());
+   }
+
+   public double getTimeVariance(){
+       double aux=0;
+       for(Point[] p: points)
+           aux += (elapsedTime.get(p) - elapsedTimeAverage)*(elapsedTime.get(p) - elapsedTimeAverage);
+       return aux/points.size();
+   }
+
+    public double getExpandedNodesStandardDeviation(){
+        return Math.sqrt(getExpandedNodeVariance());
+    }
+
+    public double getExpandedNodeVariance(){
+        double aux=0;
+        for(Point[] p: points)
+            aux += (expandedCells.get(p) - expandedNodeAverage)*(expandedCells.get(p) - expandedNodeAverage);
+        return aux/points.size();
+    }
 }

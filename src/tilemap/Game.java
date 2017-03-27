@@ -1,5 +1,6 @@
 package tilemap;
 
+import sun.awt.image.ImageWatched;
 import tilemap.Test.OctileDistance;
 import tilemap.Test.ManhattanDistance;
 import tilemap.jgrapht.alg.AStarShortestPath;
@@ -12,8 +13,7 @@ import java.awt.*;
 import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
 import java.awt.image.BufferStrategy;
-import java.util.LinkedList;
-import java.util.Random;
+import java.util.*;
 
 public class Game extends Canvas{
     private long lastFpsTime;
@@ -29,7 +29,7 @@ public class Game extends Canvas{
 
     private GameController controller;
     private int fps;
-    private GameMap gameMap = new GameMap(player, new IndoorMapGenerator());
+    private GameMap gameMap = new GameMap(player, enemies, new IndoorMapGenerator());
     private final static int MS_PER_UPDATE = 1000000000/2;
 
 
@@ -181,7 +181,7 @@ public class Game extends Canvas{
     }
 
     public void setNewGameMap(MapGenerator m){
-        gameMap=new GameMap(player, m);
+        gameMap=new GameMap(player, enemies, m);
         player.setGameMap(gameMap);
         player.spawn();
         for(Entity e : enemies) {
@@ -192,6 +192,8 @@ public class Game extends Canvas{
             if(gameMap.lineOfSight(player.getCoords()[0], player.getCoords()[1], e.getX(), e.getY()))
                 System.out.println("player is in the lof of "+ e.getImage());
         }
+        player.showEvasionPath();
+
     }
 
     /**
@@ -201,14 +203,15 @@ public class Game extends Canvas{
      */
     public static void main(String[] argv) throws InterruptedException {
 
-        //final Game g = new Game();
-       // g.gameLoop();
-        System.out.println("\nIndoor Map\n");
+        final Game g = new Game();
+        g.gameLoop();
+       /* System.out.println("\nIndoor Map [120x120]\n");
        TestPerMap(new IndoorMapGenerator());
-        System.out.println("\nOutdoor Map\n");
+        System.out.println("\nOutdoor Map [120x120]\n");
         TestPerMap(new OutdoorMapGenerator());
-        System.out.println("\nDungeon Map\n");
-        TestPerMap(new DungeonMapGenerator());
+        System.out.println("\nDungeon Map [120x120]\n");
+        TestPerMap(new DungeonMapGenerator());*/
+       //FinalTest();
     }
 
     private static Point chooseRandomPoint(GameMap map){
@@ -220,7 +223,7 @@ public class Game extends Canvas{
 
     private static void TestPerMap(MapGenerator mapgnrtr){
 
-        GameMap m = new GameMap(null, mapgnrtr);
+        GameMap m = new GameMap(null,null, mapgnrtr);
         LinkedList<Point[]> points = new LinkedList<>();
 
 
@@ -257,12 +260,139 @@ public class Game extends Canvas{
         t1.run(); System.out.println("Testing A*...");
         t2.run(); System.out.println("Testing Bidirectional A*...");
         t3.run();
-        System.out.println("Dijkstra\nTotal Expandend Cell: "+t1.getTotalExpandedCells()+"; Average Expandend Cell: "+t1.getExpandedCellPerRun()+
-                "; Elapsed Time: "+t1.getTotalElapsedTime()+"ms; Average Elapsed Time: "+String.valueOf(t1.getElapsedTimePerRun())+"ms");
-        System.out.println("A*\nTotal Expandend Cell: "+t2.getTotalExpandedCells()+"; Average Expandend Cell: "+t2.getExpandedCellPerRun()+
-                "; Elapsed Time: "+t2.getTotalElapsedTime()+"ms; Average Elapsed Time: "+String.valueOf(t2.getElapsedTimePerRun())+"ms");
-        System.out.println("Bidirectional A*\nTotal Expandend Cell: "+t3.getTotalExpandedCells()+"; Average Expandend Cell: "+t3.getExpandedCellPerRun()+
-                "; Elapsed Time: "+t3.getTotalElapsedTime()+"ms; Average Elapsed Time: "+String.valueOf(t3.getElapsedTimePerRun())+"ms");
+        System.out.println("Dijkstra\nTotal Expandend Cell: "+t1.getTotalExpandedCells()+"; Average Expandend Cell: "+t1.getExpandedCellPerRun()+" ["+t1.getExpandedNodesStandardDeviation()+
+                "]; Elapsed Time: "+t1.getTotalElapsedTime()+"ms; Average Elapsed Time: "+String.valueOf(t1.getElapsedTimePerRun())+"ms ["+t1.getTimeStandardDeviation()+"]");
+        System.out.println("A*\nTotal Expandend Cell: "+t2.getTotalExpandedCells()+"; Average Expandend Cell: "+t2.getExpandedCellPerRun()+" ["+t2.getExpandedNodesStandardDeviation()+
+                "]; Elapsed Time: "+t2.getTotalElapsedTime()+"ms; Average Elapsed Time: "+String.valueOf(t2.getElapsedTimePerRun())+"ms ["+t2.getTimeStandardDeviation()+"]");
+        System.out.println("Bidirectional A*\nTotal Expandend Cell: "+t3.getTotalExpandedCells()+"; Average Expandend Cell: "+t3.getExpandedCellPerRun()+" ["+t3.getExpandedNodesStandardDeviation()+
+                "]; Elapsed Time: "+t3.getTotalElapsedTime()+"ms; Average Elapsed Time: "+String.valueOf(t3.getElapsedTimePerRun())+"ms ["+t3.getTimeStandardDeviation()+"]");
 
+    }
+
+    public static void FinalTest(){
+        LinkedList<GameMap> indoorMaps = new LinkedList<>();
+        LinkedList<GameMap> outdoorMaps = new LinkedList<>();
+        LinkedList<GameMap> dngMaps = new LinkedList<>();
+        DijkstraShortestPath<Integer, DefaultEdge> pathfinder;
+        HashMap<GameMap, LinkedList<Point[]>> mapToPoints = new HashMap<>();
+        for(int i = 0; i<50; i++){
+            GameMap m = new GameMap(null, null, new IndoorMapGenerator());
+            indoorMaps.add(m);
+            LinkedList<Point[]> points = new LinkedList<>();
+            for(int j=0; j<200; j++){
+                Point a, b;
+                do {
+                    // System.out.println("1");
+
+                    a = chooseRandomPoint(m);
+                    b = chooseRandomPoint(m);
+                    pathfinder = new DijkstraShortestPath<Integer, DefaultEdge>(m.getGraph(), a.toNode(), b.toNode());
+
+                } while (pathfinder.getPath() == null);
+                Point[] pair = new Point[2];
+                pair[0] = a;
+                pair[1] = b;
+                points.add(pair);
+            }
+            mapToPoints.put(m, points);
+        }
+
+        for(int i=0; i<50; i++){
+            GameMap m = new GameMap(null, null, new OutdoorMapGenerator());
+            outdoorMaps.add(m);
+            LinkedList<Point[]> points = new LinkedList<>();
+            for(int j = 0; j<200; j++){
+                Point a = chooseRandomPoint(m);
+                Point b = chooseRandomPoint(m);
+                Point[] pair = new Point[2];
+                pair[0] = a;
+                pair[1] = b;
+                points.add(pair);
+            }
+            mapToPoints.put(m, points);
+        }
+
+        for(int i=0; i<50; i++){
+            GameMap m = new GameMap(null, null,  new DungeonMapGenerator());
+            dngMaps.add(m);
+            LinkedList<Point[]> points = new LinkedList<>();
+            for(int j = 0; j<200; j++){
+                Point a = chooseRandomPoint(m);
+                Point b = chooseRandomPoint(m);
+                Point[] pair = new Point[2];
+                pair[0] = a;
+                pair[1] = b;
+                points.add(pair);
+            }
+            mapToPoints.put(m, points);
+        }
+        System.out.println("Testing 50 indoor maps [120x120], 20 points for each map");
+        TestMaps(indoorMaps, mapToPoints);
+        System.out.println("\nTesting 50 outdoor maps [120x120], 20 points for each map");
+        TestMaps(outdoorMaps, mapToPoints);
+        System.out.println("\nTesting 50 dungeon maps [120x120], 20 points for each map");
+        TestMaps(dngMaps, mapToPoints);
+
+    }
+
+    public static void TestMaps(LinkedList<GameMap> maps, HashMap<GameMap, LinkedList<Point[]>> mapToPoints){
+        LinkedList expNodesDijkstraAverages = new LinkedList<Double>();
+        LinkedList expNodesAstarAverages = new LinkedList<Double>();
+        LinkedList expNodesBiAstarAverages = new LinkedList<Double>();
+        LinkedList ElapsTimeDijkstraAverages = new LinkedList<Double>();
+        LinkedList ElapsTimeAstarAverages = new LinkedList<Double>();
+        LinkedList ElapsTimeBiAstarAverages = new LinkedList<Double>();
+
+        for(GameMap m : maps){
+            Test t1 = new DijkstraTest(m, mapToPoints.get(m));
+            Test t2 = new AStarTest(m, mapToPoints.get(m));
+            Test t3 = new BidirectionalAstarTest(m, mapToPoints.get(m));
+            t1.run();
+            t2.run();
+            t3.run();
+            expNodesDijkstraAverages.add(t1.getExpandedCellPerRun());
+            ElapsTimeDijkstraAverages.add(t1.getElapsedTimePerRun());
+            expNodesAstarAverages.add(t2.getExpandedCellPerRun());
+            ElapsTimeAstarAverages.add(t2.getElapsedTimePerRun());
+            expNodesBiAstarAverages.add(t3.getExpandedCellPerRun());
+            ElapsTimeBiAstarAverages.add(t3.getElapsedTimePerRun());
+        }
+        double djkstrTotExp = getTot(expNodesDijkstraAverages);
+        double astarTotExp = getTot(expNodesAstarAverages);
+        double biastarTotExp = getTot(expNodesBiAstarAverages);
+        System.out.println("Dijkstra\nTotal Expandend Cell: "+djkstrTotExp+"; Average Expandend Cell: "+getAvg(expNodesDijkstraAverages)+" ["+getStandardDeviation(expNodesDijkstraAverages,getAvg(expNodesDijkstraAverages))+
+                "]; Elapsed Time: "+getTot(ElapsTimeDijkstraAverages)+"ms; Average Elapsed Time: "+getAvg(ElapsTimeDijkstraAverages)+"ms ["+getStandardDeviation(ElapsTimeDijkstraAverages,getAvg(ElapsTimeDijkstraAverages))+"]");
+        System.out.println("A*\nTotal Expandend Cell: "+astarTotExp+"; Average Expandend Cell: "+getAvg(expNodesAstarAverages)+" ["+getStandardDeviation(expNodesAstarAverages,getAvg(expNodesAstarAverages))+
+                "]; Elapsed Time: "+getTot(ElapsTimeAstarAverages)+"ms; Average Elapsed Time: "+getAvg(ElapsTimeAstarAverages)+"ms ["+getStandardDeviation(ElapsTimeAstarAverages,getAvg(ElapsTimeAstarAverages))+"]");
+        System.out.println("Bidirectional A*\nTotal Expandend Cell: "+biastarTotExp+"; Average Expandend Cell: "+getAvg(expNodesBiAstarAverages)+" ["+getStandardDeviation(expNodesBiAstarAverages,getAvg(expNodesBiAstarAverages))+
+                "]; Elapsed Time: "+getTot(ElapsTimeBiAstarAverages)+"ms; Average Elapsed Time: "+getAvg(ElapsTimeBiAstarAverages)+"ms ["+getStandardDeviation(ElapsTimeBiAstarAverages,getAvg(ElapsTimeBiAstarAverages))+"]");
+    }
+
+    private static double getTot(LinkedList<Double> l) {
+        double d=0;
+        for(Double i : l)
+            d+=i;
+        return d;
+    }
+
+    public static double getAvg(LinkedList<Double> l){
+        double d=0;
+        for(Double i : l){
+            d += i;
+        }
+        return d/l.size();
+    }
+
+    private static double getVariance(LinkedList<Double> l, double avg){
+        double d=0;
+        for(Double i : l) {
+            if(i<0) System.out.println("osservazione negativa");
+            d += (i - avg) * (i - avg);
+        }
+        return d/(l.size()-1);
+    }
+
+    private static double getStandardDeviation(LinkedList<Double> l, double avg){
+        return Math.sqrt(getVariance(l,avg));
     }
 }

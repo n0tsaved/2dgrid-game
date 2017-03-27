@@ -7,6 +7,7 @@ import tilemap.jgrapht.graph.SimpleWeightedGraph;
 
 import java.awt.*;
 import java.util.ArrayList;
+import java.util.LinkedList;
 //import tilemap.jgrapht.ext.*;
 
 public class GameMap {
@@ -26,6 +27,7 @@ public class GameMap {
 
 
     private Player player;
+    private LinkedList<Entity> enemies;
 
     private ArrayList<Room> rooms;
     private ArrayList<Obstacle> obstcls;
@@ -34,10 +36,11 @@ public class GameMap {
     /**
      * Create a new map with some default contents
      */
-    public GameMap(Player p, MapGenerator m) {
+    public GameMap(Player p, LinkedList<Entity> e, MapGenerator m) {
         rooms=new ArrayList<>();
         obstcls=new ArrayList<>();
         player=p;
+        enemies = e;
         //DungeonMapGenerator mgnrt = new DungeonMapGenerator();
         mapGnrtr=m;
         mapGnrtr.generate(this);
@@ -205,6 +208,9 @@ public class GameMap {
         int[] coords = player.getCoords();
         return toNode(coords[0], coords[1]);
     }
+     public LinkedList<Entity> getEnemies(){
+        return enemies;
+     }
 
     public static boolean lineOfSight(int x1, int y1, int x2, int y2) {
         int dy = y2 - y1;

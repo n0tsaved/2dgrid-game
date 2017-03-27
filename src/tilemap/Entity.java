@@ -61,6 +61,10 @@ public class Entity {
         report();
     }
 
+    public int getNode(){
+        return y*GameMap.WIDTH + x;
+    }
+
     public void setPath(Pathfinder p){
 
         //astarPathFind=new AStarShortestPath<>(gameMap.getGraph());

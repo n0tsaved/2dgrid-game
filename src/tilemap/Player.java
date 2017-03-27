@@ -1,6 +1,12 @@
 package tilemap;
 
+import tilemap.jgrapht.GraphPath;
+import tilemap.jgrapht.Graphs;
+import tilemap.jgrapht.alg.util.Trailmax;
+import tilemap.jgrapht.graph.DefaultEdge;
+
 import java.awt.*;
+import java.util.LinkedList;
 import java.util.Random;
 
 /**
@@ -116,5 +122,30 @@ public class Player {
         // if it wasn't a valid move don't do anything apart from
         // tell the caller
         return false;
+    }
+
+    public int getNode(){
+        return gameMap.WIDTH*y +x;
+    }
+
+    public void showEvasionPath(){
+        LinkedList<Entity> enemies = gameMap.getEnemies();
+        Entity e = enemies.getFirst();
+        Integer agentNode = e.getNode();
+        Integer targetNode = this.getNode();
+        Trailmax<Integer, DefaultEdge> t = new Trailmax<>(gameMap.getGraph());
+        GraphPath<Integer, DefaultEdge> p = t.getShortestPath(agentNode, targetNode, null);
+        colorEvasionPath(p, e);
+    }
+
+    private void colorEvasionPath(GraphPath<Integer, DefaultEdge> p, Entity e) {
+        Tile[][] map = gameMap.getData();
+        if(p == null) return;
+        System.out.println("player evades enemy "+e.getImage());
+        System.out.println(p.toString());
+        for(Integer i : Graphs.getPathVertexList(p))
+                map[i%gameMap.WIDTH][i/gameMap.WIDTH].isEvasion=true;
+//        for(Integer i : Graphs.getPathVertexList(ThetaStarpath))
+//            map[i%gameMap.WIDTH][i/gameMap.WIDTH].isThetaPath=true;
     }
 }

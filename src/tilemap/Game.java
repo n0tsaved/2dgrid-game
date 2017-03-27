@@ -23,7 +23,7 @@ public class Game extends Canvas{
 
     /** The gameMap our player will wander round */
     /** The player entity that will be controlled with cursors */
-    private Player player = new Player("☺");
+    private Player player = new Player("☻");
 
     private LinkedList<Entity> enemies = new LinkedList<>();
 

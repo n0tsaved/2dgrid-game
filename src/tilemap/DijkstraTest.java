@@ -5,19 +5,22 @@ import tilemap.jgrapht.GraphPath;
 import tilemap.jgrapht.Graphs;
 import tilemap.jgrapht.alg.DijkstraShortestPath;
 import tilemap.jgrapht.graph.DefaultEdge;
+import tilemap.jgrapht.graph.SimpleWeightedGraph;
 
 import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.TimeUnit;
 
 /**
  * Created by notsaved on 1/23/17.
  */
 public class DijkstraTest extends Test {
 
-    public DijkstraTest(GameMap m, List<Point[]> points){
-        super(m,points);
+
+    public DijkstraTest(SimpleWeightedGraph map, List<Point[]> points) {
+        super(map, points);
     }
 
     @Override
@@ -39,9 +42,10 @@ public class DijkstraTest extends Test {
             }*/
            next = p[0].toNode();
            now = System.currentTimeMillis();
-           pathfinder= new DijkstraShortestPath<Integer, DefaultEdge>(map.getGraph(), next, p[1].toNode());
-           elapsedTime.put(p,System.currentTimeMillis() - now);
-           expandedCells.put(p,pathfinder.getNumberOfExpandedNodes());
+           pathfinder= new DijkstraShortestPath<Integer, DefaultEdge>(map, next, p[1].toNode());
+           //elapsedTime.put(p, TimeUnit.NANOSECONDS.toMillis(System.nanoTime() - now));
+            elapsedTime.put(p, System.currentTimeMillis() - now);
+            expandedCells.put(p,pathfinder.getNumberOfExpandedNodes());
         }
     }
 

@@ -3,18 +3,20 @@ package tilemap;
 import tilemap.jgrapht.GraphPath;
 import tilemap.jgrapht.alg.BidirectionalAStarShortestPath;
 import tilemap.jgrapht.graph.DefaultEdge;
+import tilemap.jgrapht.graph.SimpleWeightedGraph;
 
 import java.util.List;
+import java.util.concurrent.TimeUnit;
 
 /**
  * Created by notsaved on 3/14/17.
  */
 public class BidirectionalAstarTest extends Test{
 
-    public BidirectionalAstarTest(GameMap m, List<Point[]> points){
-        super(m,points);
-    }
 
+    public BidirectionalAstarTest(SimpleWeightedGraph map, List<Point[]> points) {
+        super(map, points);
+    }
 
     @Override
     public void run() {
@@ -34,10 +36,10 @@ public class BidirectionalAstarTest extends Test{
                 next=Graphs.getOppositeVertex(map.getGraph(), path.getEdgeList().get(0), next);
             }*/
             next = p[0].toNode();
-            pathfinder= new BidirectionalAStarShortestPath<>(map.getGraph());
+            pathfinder= new BidirectionalAStarShortestPath<>(map);
             now = System.currentTimeMillis();
             pathfinder.getShortestPath(next,p[1].toNode(), new OctileDistance());
-            elapsedTime.put(p,System.currentTimeMillis() - now);
+            elapsedTime.put(p, System.currentTimeMillis() - now);
             expandedCells.put(p,pathfinder.getNumberOfExpandedNodes());
         }
     }

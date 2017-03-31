@@ -10,6 +10,7 @@ import tilemap.jgrapht.alg.interfaces.AStarAdmissibleHeuristic;
 import tilemap.jgrapht.alg.interfaces.Pathfinder;
 import tilemap.jgrapht.graph.DefaultEdge;
 import tilemap.Point;
+import tilemap.jgrapht.graph.SimpleWeightedGraph;
 
 import java.awt.*;
 import java.util.*;
@@ -20,7 +21,7 @@ import java.util.List;
  */
 public abstract class Test  {
 
-    protected GameMap map;
+    protected SimpleWeightedGraph map;
     protected List<Point[]> points;
     protected Map<Point[], Long> elapsedTime = new HashMap<>();
     protected Map<Point[], Integer> expandedCells = new HashMap<>();
@@ -33,7 +34,7 @@ public abstract class Test  {
 
     private static Random r = new Random(GameMap.WIDTH*GameMap.HEIGHT);
 */
-    public Test(GameMap map, List<Point[]> points){
+    public Test(SimpleWeightedGraph map, List<Point[]> points){
         this.map = map;
         this.points = points;
     }

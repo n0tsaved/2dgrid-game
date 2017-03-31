@@ -1,7 +1,7 @@
 package tilemap;
 
 public class Room implements TileMapElement{
-    public int x,y,width,height, area;
+    private int x,y,width,height, area;
 
 
     public Room(int x,int y, int width, int height){
@@ -34,5 +34,25 @@ public class Room implements TileMapElement{
                 map[i][j]=new Tile(false);
                 //System.out.println("("+i+","+j+") Blocked = "+map[i][j].isBlocked);
             }
+    }
+
+    public int getArea() {
+        return area;
+    }
+
+    public int getHeight() {
+        return height;
+    }
+
+    public int getWidth() {
+        return width;
+    }
+
+    public int getY() {
+        return y;
+    }
+
+    public int getX() {
+        return x;
     }
 }

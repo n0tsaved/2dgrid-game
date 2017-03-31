@@ -10,6 +10,8 @@ public class DungeonMapGenerator extends MapGenerator {
     private static final int ROOM_MAX_SIZE=20;
     private static final int ROOM_MIN_SIZE=10;
     private static final int MAX_ROOMS=15;
+    private static final int COVERAGE_PERCENT = 30;
+    private static final int MIN_AREA_COVERAGE = ((GameMap.WIDTH*GameMap.HEIGHT)*COVERAGE_PERCENT)/100;
     public void generate(GameMap map) {
         setAllBlocked(map.getData());
         placeRooms(map);
@@ -17,12 +19,16 @@ public class DungeonMapGenerator extends MapGenerator {
 
     private void placeRooms(GameMap map) {
         Random r=new Random();
-        for(int i=0;i<MAX_ROOMS;i++) {
+        int area=0;
+        //for(int i=0;i<MAX_ROOMS;i++)
+        while(area < MIN_AREA_COVERAGE){
             int w = r.nextInt((ROOM_MAX_SIZE - ROOM_MIN_SIZE) + 1)+ROOM_MIN_SIZE;
             int h = r.nextInt((ROOM_MAX_SIZE - ROOM_MIN_SIZE) + 1) + ROOM_MIN_SIZE;
             int x = r.nextInt(GameMap.WIDTH -w -1)+1;
             int y = r.nextInt(GameMap.HEIGHT - h -1)+1;
-            map.addRoom(new Room(x,y,w,h));
+            Room room = new Room(x,y,w,h);
+            if(map.addRoom(room))
+                area+=room.getArea();
         }
         List<Room> rooms = map.getRooms();
         createTunnels(rooms, map.getData());

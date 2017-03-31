@@ -32,6 +32,7 @@ public class GameMap {
     private ArrayList<Room> rooms;
     private ArrayList<Obstacle> obstcls;
     private SimpleWeightedGraph<Integer, DefaultWeightedEdge> completeGraph;
+    private static final double SQRT2 = Math.sqrt(2);
 
     /**
      * Create a new map with some default contents
@@ -94,26 +95,26 @@ public class GameMap {
                 if (!blocked(i - 1, j - 1)) { //add sxup
                     DefaultWeightedEdge e = new DefaultWeightedEdge();
                     completeGraph.addEdge(toNode(i, j), toNode(i - 1, j - 1), e);
-                    completeGraph.setEdgeWeight(e, Math.sqrt(2));
+                    completeGraph.setEdgeWeight(e, SQRT2);
                 }
                 if (!blocked(i + 1, j - 1)) { // add dxup
                     DefaultWeightedEdge e = new DefaultWeightedEdge();
                     completeGraph.addEdge(toNode(i, j), toNode(i + 1, j - 1), new DefaultWeightedEdge());
-                    completeGraph.setEdgeWeight(e, Math.sqrt(2));
+                    completeGraph.setEdgeWeight(e, SQRT2);
                 }
                 if (!blocked(i + 1, j)) //add dx
                     completeGraph.addEdge(toNode(i, j), toNode(i + 1, j), new DefaultWeightedEdge());
                 if (!blocked(i + 1, j + 1)){ //add dxdown
                     DefaultWeightedEdge e = new DefaultWeightedEdge();
                     completeGraph.addEdge(toNode(i, j), toNode(i + 1, j + 1), new DefaultWeightedEdge());
-                    completeGraph.setEdgeWeight(e, Math.sqrt(2));
+                    completeGraph.setEdgeWeight(e, SQRT2);
             }
                 if (!blocked(i, j + 1)) //add down
                     completeGraph.addEdge(toNode(i, j), toNode(i, j + 1), new DefaultWeightedEdge());
                 if (!blocked(i - 1, j + 1)) { //add sxdown
                     DefaultWeightedEdge e = new DefaultWeightedEdge();
                     completeGraph.addEdge(toNode(i, j), toNode(i - 1, j + 1), new DefaultWeightedEdge());
-                    completeGraph.setEdgeWeight(e, Math.sqrt(2));
+                    completeGraph.setEdgeWeight(e, SQRT2);
                 }
             }
         }
@@ -171,8 +172,8 @@ public class GameMap {
         for (Room r : rooms)
             if(room.intersect(r)) return false;
         //grid.setTraversable(room);
-        for (int i = room.x; i < room.x + room.width; i++)
-            for (int j = room.y; j < room.y + room.height; j++) {
+        for (int i = room.getX(); i < room.getX() + room.getWidth(); i++)
+            for (int j = room.getY(); j < room.getY() + room.getHeight(); j++) {
                 data[i][j].isBlocked = false;
             }
         return rooms.add(room);
@@ -193,8 +194,8 @@ public class GameMap {
         for(Obstacle x : obstcls)
             if(obst.intersect(x)) return false;
         //grid.setNotTraversable(obst);
-        for (int i = obst.x; i < obst.x + obst.width; i++)
-            for (int j = obst.y; j < obst.y + obst.height; j++) {
+        for (int i = obst.getX(); i < obst.getX() + obst.getWidth(); i++)
+            for (int j = obst.getY(); j < obst.getY() + obst.getHeight(); j++) {
                 data[i][j].isBlocked = true;
             }
         return obstcls.add(obst);

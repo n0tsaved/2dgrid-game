@@ -3,7 +3,7 @@ package tilemap;
 /**
  */
 public class Obstacle implements TileMapElement{
-    public int x,y,width,height;
+    private int x,y,width,height;
 
     public Obstacle(int x,int y, int width, int height){
         this.x=x;
@@ -27,5 +27,25 @@ public class Obstacle implements TileMapElement{
                 map[i][j]=new Tile(true);
                 //System.out.println("("+i+","+j+") Blocked = "+map[i][j].isBlocked);
             }
+    }
+
+    public int getArea() {
+        return width*height;
+    }
+
+    public int getX() {
+        return x;
+    }
+
+    public int getY() {
+        return y;
+    }
+
+    public int getWidth() {
+        return width;
+    }
+
+    public int getHeight() {
+        return height;
     }
 }

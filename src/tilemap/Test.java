@@ -25,6 +25,10 @@ public abstract class Test  {
     protected List<Point[]> points;
     protected Map<Point[], Long> elapsedTime = new HashMap<>();
     protected Map<Point[], Integer> expandedCells = new HashMap<>();
+    protected Map<Point[], LinkedList<Integer>> movingExpandedCells = new HashMap<>();
+    protected Map<Point[], LinkedList<Long>> movingElapsedTime = new HashMap<>();
+    protected Map<Point[], Integer> movesMap = new HashMap<>();
+    protected Map<Point[], Integer> searchesMap = new HashMap<>();
     protected Pathfinder<Integer, DefaultEdge> pathfinder;
     protected String result;
     protected double expandedNodeAverage;
@@ -39,9 +43,19 @@ public abstract class Test  {
         this.points = points;
     }
 
-    public abstract void run();
+    public abstract void runStationaryTest();
+
+    public abstract void runMovingTest();
+
+    public double getMovingTotalElapsedTime() {
+        double tot =0;
+        for(Point[] p : points)
+            for(Long l : movingElapsedTime.get(p))
+                tot+=l;
+        return tot;
+    }
     /*
-    public void run(){
+    public void runStationaryTest(){
         long now;
         GraphPath<Integer,DefaultEdge> path = null;
         for(Point[] p : points)
@@ -111,6 +125,22 @@ public abstract class Test  {
         return tot;
     }
 
+    public double getMovingTotalSearches(){
+        double tot=0;
+        for(Point[] p : points)
+            tot+=searchesMap.get(p);
+        return tot;
+    }
+
+    public double getMovingTotalExpandedCells(){
+        double tot=0;
+        for (Point[] p : points) {
+            for (Integer i : movingExpandedCells.get(p))
+                tot += i;
+        }
+        return tot;
+    }
+
     public double getExpandedCellPerRun(){
         if(expandedNodeAverage==0) {
             expandedNodeAverage = getTotalExpandedCells()/points.size();
@@ -132,12 +162,14 @@ public abstract class Test  {
         return elapsedTimeAverage;
     }
 
-   /* public double getTotalMoves(){
+   public double getTotalMoves(){
         int moves=0;
         for(Point[] p: points)
-            moves+=expandedCells.get(p).size();
+            moves+=movesMap.get(p);
         return moves;
-    }*/
+    }
+
+
    public double getTimeStandardDeviation(){
        return Math.sqrt(getTimeVariance());
    }

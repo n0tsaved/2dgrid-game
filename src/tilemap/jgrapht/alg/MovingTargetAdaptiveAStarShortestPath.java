@@ -189,6 +189,7 @@ public class MovingTargetAdaptiveAStarShortestPath<V,E> extends AStarShortestPat
             throw new IllegalArgumentException("Source or target vertex not contained in the graph!");
 
         if(counter==0) this.initialize(admissibleHeuristic);
+        else restoreCoherence(targetVertex);
         numberOfExpandedNodes=0;
         start = sourceVertex;
         goal= targetVertex;
@@ -218,7 +219,7 @@ public class MovingTargetAdaptiveAStarShortestPath<V,E> extends AStarShortestPat
     }
 
 
-    public void restoreCoherence(V newGoal){
+    private void restoreCoherence(V newGoal){
         if(counter<1) return;
         if(!goal.equals(newGoal)) {
             initializeState(newGoal);

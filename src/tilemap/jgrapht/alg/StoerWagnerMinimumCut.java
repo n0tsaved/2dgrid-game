@@ -65,7 +65,7 @@ public class StoerWagnerMinimumCut<V, E>
     /**
      * Will compute the minimum cut in graph.
      *
-     * @param graph graph over which to run algorithm
+     * @param graph graph over which to runStationaryTest algorithm
      *
      * @throws IllegalArgumentException if a negative weight edge is found
      * @throws IllegalArgumentException if graph has less than 2 vertices

@@ -1,12 +1,6 @@
 package tilemap;
 
-import sun.awt.image.ImageWatched;
-import tilemap.Test.OctileDistance;
-import tilemap.Test.ManhattanDistance;
-import tilemap.jgrapht.alg.AStarShortestPath;
 import tilemap.jgrapht.alg.BidirectionalAStarShortestPath;
-import tilemap.jgrapht.alg.DijkstraShortestPath;
-import tilemap.jgrapht.alg.ThetaStarShortestPath;
 import tilemap.jgrapht.graph.DefaultEdge;
 
 import java.awt.*;
@@ -170,7 +164,7 @@ public class Game extends Canvas{
             for (int i=0;i<delta / 5;i++) {
                 controller.logic(5);
             }
-            // after we've run through the segments if there is anything
+            // after we've runStationaryTest through the segments if there is anything
             // left over we update for that
             if ((delta % 5) != 0)
                 controller.logic(delta % 5);
@@ -205,6 +199,7 @@ public class Game extends Canvas{
 
         //final Game g = new Game();
         //g.gameLoop();
-        StationaryTest t = new StationaryTest();t.runDungeon();t.runIndoor();t.runOutdoor();
+        GlobalTest t = new GlobalTest();
+        t.runMovingTest();
     }
 }

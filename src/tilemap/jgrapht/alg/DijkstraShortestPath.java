@@ -64,6 +64,7 @@ public final class DijkstraShortestPath<V, E> implements Pathfinder<V,E>
     private GraphPath<V, E> path;
     private int numberOfExpandedNode=0;
     private Graph<V,E> graph;
+    private long elapsedTime;
 
 
     /**
@@ -109,12 +110,13 @@ public final class DijkstraShortestPath<V, E> implements Pathfinder<V,E>
             new ClosestFirstIterator<V, E>(graph, startVertex, radius);
 
         numberOfExpandedNode = 0;
-
+        long now = System.currentTimeMillis();
         while (iter.hasNext()) {
             V vertex = iter.next();
             numberOfExpandedNode++;
 
             if (vertex.equals(endVertex)) {
+                elapsedTime = System.currentTimeMillis() - now;
                 createEdgeList(graph, iter, startVertex, endVertex);
                 return;
             }
@@ -231,12 +233,13 @@ public final class DijkstraShortestPath<V, E> implements Pathfinder<V,E>
                 new ClosestFirstIterator<V, E>(graph, sourceVertex, Double.POSITIVE_INFINITY);
 
         numberOfExpandedNode = 0;
-
+        long now = System.currentTimeMillis();
         while (iter.hasNext()) {
             V vertex = iter.next();
             numberOfExpandedNode++;
 
             if (vertex.equals(targetVertex)) {
+                elapsedTime = System.currentTimeMillis() - now;
                 createEdgeList(graph, iter, sourceVertex, targetVertex);
                 return path;
             }
@@ -249,6 +252,10 @@ public final class DijkstraShortestPath<V, E> implements Pathfinder<V,E>
     @Override
     public int getNumberOfExpandedNodes() {
         return numberOfExpandedNode;
+    }
+
+    public long getElapsedTime(){
+        return elapsedTime;
     }
 }
 

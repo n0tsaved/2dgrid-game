@@ -383,6 +383,7 @@ public abstract class AbstractBaseGraph<V, E>
             unmodifiableEdgeSet = Collections.unmodifiableSet(edgeMap.keySet());
         }
 
+
         return unmodifiableEdgeSet;
     }
 
@@ -494,11 +495,11 @@ public abstract class AbstractBaseGraph<V, E>
      */
     @Override public double getEdgeWeight(E e)
     {
-        if (e instanceof DefaultWeightedEdge) {
+        if (e.getClass()==DefaultWeightedEdge.class) {
             return ((DefaultWeightedEdge) e).getWeight();
         } else if (e == null) {
             throw new NullPointerException();
-        } else {
+        } else { System.out.println("porcodiooo");
             return WeightedGraph.DEFAULT_EDGE_WEIGHT;
         }
     }
@@ -649,7 +650,6 @@ public abstract class AbstractBaseGraph<V, E>
         private static final long serialVersionUID = 5936902837403445985L;
 
         /**
-         * @see EdgeSetFactory.createEdgeSet
          */
         @Override public Set<EE> createEdgeSet(VV vertex)
         {

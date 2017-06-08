@@ -65,7 +65,7 @@ public class DefaultWeightedEdge
      *
      * @return weight of this edge
      */
-    protected double getWeight()
+    public double getWeight()
     {
         return weight;
     }

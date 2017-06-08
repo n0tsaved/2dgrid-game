@@ -6,6 +6,7 @@ import tilemap.jgrapht.Graphs;
 import tilemap.jgrapht.alg.DijkstraShortestPath;
 import tilemap.jgrapht.alg.util.Trailmax;
 import tilemap.jgrapht.graph.DefaultEdge;
+import tilemap.jgrapht.graph.DefaultWeightedEdge;
 import tilemap.jgrapht.graph.SimpleWeightedGraph;
 
 import java.util.HashMap;
@@ -43,7 +44,7 @@ public class DijkstraTest extends Test {
             }*/
            next = p[0].toNode();
            now = System.currentTimeMillis();
-           pathfinder= new DijkstraShortestPath<Integer, DefaultEdge>(map, next, p[1].toNode());
+           pathfinder= new DijkstraShortestPath<Integer, DefaultWeightedEdge>(map, next, p[1].toNode());
            //elapsedTime.put(p, TimeUnit.NANOSECONDS.toMillis(System.nanoTime() - now));
             elapsedTime.put(p, System.currentTimeMillis() - now);
             expandedCells.put(p,pathfinder.getNumberOfExpandedNodes());
@@ -52,14 +53,15 @@ public class DijkstraTest extends Test {
 
     @Override
     public void runMovingTest() {
+        //System.out.println("Performing Dijkstra Moving Target Test");
         long now;
         int count;
         int search;
         elapsedTime.clear();
         expandedCells.clear();
-        GraphPath<Integer,DefaultEdge> agentPath=null;
-        GraphPath<Integer,DefaultEdge> targetPath=null;
-        Integer agentNode, targetNode;
+        GraphPath<Integer,DefaultWeightedEdge> agentPath=null;
+        //GraphPath<Integer,DefaultWeightedEdge> targetPath=null;
+        //Integer agentNode, targetNode;
         List<Integer> pathToFollow = null;
         for(Point[] p : points){
             count=0;
@@ -68,12 +70,17 @@ public class DijkstraTest extends Test {
             targetNode = p[1].toNode();
             LinkedList<Integer> movingExpCell = new LinkedList<>();
             LinkedList<Long> movingElapsTime = new LinkedList<>();
+            pathfinder = new DijkstraShortestPath<Integer, DefaultWeightedEdge>(map, agentNode, targetNode);
+
+            targetThread r = new targetThread();
+            evadeThread = new Thread(r);
+
+
+            evadeThread.start();
             while(!agentNode.equals(targetNode)){
                 if(pathToFollow==null || !agentPath.getEndVertex().equals(targetNode)) {
-                    now = System.currentTimeMillis();
-                    pathfinder = new DijkstraShortestPath<Integer, DefaultEdge>(map, agentNode, targetNode);
-                    movingElapsTime.add(System.currentTimeMillis() - now);
                     agentPath = pathfinder.getShortestPath(agentNode, targetNode, new OctileDistance());
+                    movingElapsTime.add(pathfinder.getElapsedTime());
                     movingExpCell.add(pathfinder.getNumberOfExpandedNodes());
                     search++;
                 }
@@ -81,11 +88,21 @@ public class DijkstraTest extends Test {
                 Integer agentNext = null;
                 //System.out.println(agentNode+","+targetNode);
                 if(count%2==0) {
-                    targetPath = new Trailmax<Integer,DefaultEdge>(map).getShortestPath(agentNode,targetNode,null);
+                    /*targetPath = new Trailmax<Integer,DefaultWeightedEdge>(map).getShortestPath(agentNode,targetNode,null);
                     pathToFollow = Graphs.getPathVertexList(targetPath);
                     if (!pathToFollow.isEmpty()) targetNext = pathToFollow.remove(0);
                     if (targetNext.equals(targetNode) && !pathToFollow.isEmpty()) targetNext = pathToFollow.remove(0);
-                    targetNode = targetNext;
+                    targetNode = targetNext;*/
+
+                    synchronized(moveTarget) {
+                        moveTarget = new Boolean(true);
+                    }
+
+                    try {
+                        Thread.sleep(10);
+                    } catch (InterruptedException e) {
+                        e.printStackTrace();
+                    }
                 }
                 pathToFollow=Graphs.getPathVertexList(agentPath);
                 if(!pathToFollow.isEmpty()){
@@ -95,6 +112,12 @@ public class DijkstraTest extends Test {
                     agentNode = agentNext;
                     count++;
 
+            }
+            r.terminate();
+            try {
+                evadeThread.join();
+            } catch (InterruptedException e) {
+                e.printStackTrace();
             }
             pathToFollow=null;
             movingElapsedTime.put(p, movingElapsTime);

@@ -2,8 +2,10 @@ package tilemap;
 
 import tilemap.jgrapht.alg.DijkstraShortestPath;
 import tilemap.jgrapht.graph.DefaultEdge;
+import tilemap.jgrapht.graph.DefaultWeightedEdge;
 import tilemap.jgrapht.graph.SimpleWeightedGraph;
 
+import java.io.IOException;
 import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.Random;
@@ -12,13 +14,13 @@ import java.util.Random;
  * Created by notsaved on 3/30/17.
  */
 public class GlobalTest {
-    private static final int NUMBER_OF_MAPS = 60;
-    private static final int NUMBER_OF_POINTS = 1;
-    private LinkedList<SimpleWeightedGraph<Integer,DefaultEdge>> indoorMaps = new LinkedList<>();
-    private LinkedList<SimpleWeightedGraph<Integer,DefaultEdge>> outdoorMaps = new LinkedList<>();
-    private LinkedList<SimpleWeightedGraph<Integer,DefaultEdge>> dngMaps = new LinkedList<>();
-    private DijkstraShortestPath<Integer, DefaultEdge> pathfinder;
-    private HashMap<SimpleWeightedGraph<Integer,DefaultEdge>, LinkedList<Point[]>> mapToPoints = new HashMap<>();
+    private static final int NUMBER_OF_MAPS = 10;
+    private static final int NUMBER_OF_POINTS = 3;
+    private LinkedList<SimpleWeightedGraph<Integer,DefaultWeightedEdge>> indoorMaps = new LinkedList<>();
+    private LinkedList<SimpleWeightedGraph<Integer,DefaultWeightedEdge>> outdoorMaps = new LinkedList<>();
+    private LinkedList<SimpleWeightedGraph<Integer,DefaultWeightedEdge>> dngMaps = new LinkedList<>();
+    private DijkstraShortestPath<Integer, DefaultWeightedEdge> pathfinder;
+    private HashMap<SimpleWeightedGraph<Integer,DefaultWeightedEdge>, LinkedList<Point[]>> mapToPoints = new HashMap<>();
     private static Random r = new Random(GameMap.WIDTH*GameMap.HEIGHT);
     private static final String movingTest = " (a) = searches until the target is caught;\n (b) = moves until the target is caught;\n (c) = total state expansions until the target is caught (" +
             "standard deviation of the mean);\n (d) = total search time until the target is caught in milliseconds (standard deviation of the mean);\n (e) = runtime per search (in milliseconds)";
@@ -26,8 +28,11 @@ public class GlobalTest {
 
     public GlobalTest(){
         System.out.println("Generating "+NUMBER_OF_MAPS+" maps for each kind with "+NUMBER_OF_POINTS+" points for each one...");
+        MapGenerator indoorGnrt = new IndoorMapGenerator();
+        MapGenerator outdoorGnrt = new OutdoorMapGenerator();
+        MapGenerator dungeonGnrt = new DungeonMapGenerator();
         for(int i = 0; i<NUMBER_OF_MAPS; i++){
-            GameMap m = new GameMap(null, null, new IndoorMapGenerator());
+            GameMap m = new GameMap(null, null, indoorGnrt);
             indoorMaps.add(m.getGraph());
             LinkedList<Point[]> points = new LinkedList<>();
             for(int j=0; j<NUMBER_OF_POINTS; j++){
@@ -35,7 +40,7 @@ public class GlobalTest {
                 do {
                     a = chooseRandomPoint(m);
                     b = chooseRandomPoint(m);
-                    pathfinder = new DijkstraShortestPath<Integer, DefaultEdge>(m.getGraph(), a.toNode(), b.toNode());
+                    pathfinder = new DijkstraShortestPath<>(m.getGraph(), a.toNode(), b.toNode());
 
                 } while (pathfinder.getPath() == null);
                 Point[] pair = new Point[2];
@@ -47,7 +52,7 @@ public class GlobalTest {
         }
 
         for(int i=0; i<NUMBER_OF_MAPS; i++){
-            GameMap m = new GameMap(null, null, new OutdoorMapGenerator());
+            GameMap m = new GameMap(null, null, outdoorGnrt);
             outdoorMaps.add(m.getGraph());
             LinkedList<Point[]> points = new LinkedList<>();
             for(int j = 0; j<NUMBER_OF_POINTS; j++){
@@ -62,7 +67,7 @@ public class GlobalTest {
         }
 
         for(int i=0; i<NUMBER_OF_MAPS; i++){
-            GameMap m = new GameMap(null, null,  new DungeonMapGenerator());
+            GameMap m = new GameMap(null, null,  dungeonGnrt);
             dngMaps.add(m.getGraph());
             LinkedList<Point[]> points = new LinkedList<>();
             for(int j = 0; j<NUMBER_OF_POINTS; j++){
@@ -75,21 +80,21 @@ public class GlobalTest {
             }
             mapToPoints.put(m.getGraph(), points);
         }
+       /* for(SimpleWeightedGraph<Integer, DefaultWeightedEdge> m : outdoorMaps)
+            for(DefaultWeightedEdge e: m.edgeSet())
+                System.out.println(e.toString()+", "+e.getWeight());*/
     }
 
 
     public void runStationaryTest(){
         System.out.println("Stationary Target Test\n");
 
-        System.out.println("\nTesting "+indoorMaps.size()+" indoor maps [120x120], "+NUMBER_OF_POINTS+" points for each map\n");
-        performStationaryTest(indoorMaps, mapToPoints);
-        System.out.println("\nTesting "+outdoorMaps.size()+" outdoor maps [120x120], "+NUMBER_OF_POINTS+" points for each map\n");
-        performStationaryTest(outdoorMaps, mapToPoints);
-        System.out.println("\nTesting "+dngMaps.size()+" dungeon maps [120x120], "+NUMBER_OF_POINTS+" points for each map\n");
-        performStationaryTest(dngMaps, mapToPoints);
+        performStationaryTest(indoorMaps, mapToPoints, "\nTesting " + indoorMaps.size() + " indoor maps [120x120], " + NUMBER_OF_POINTS + " points for each map\n");
+        performStationaryTest(outdoorMaps, mapToPoints, "\nTesting "+outdoorMaps.size()+" outdoor maps [120x120], "+NUMBER_OF_POINTS+" points for each map\n");
+        performStationaryTest(dngMaps, mapToPoints, "\nTesting "+dngMaps.size()+" dungeon maps [120x120], "+NUMBER_OF_POINTS+" points for each map\n");
     }
 
-    private static void performStationaryTest(LinkedList<SimpleWeightedGraph<Integer, DefaultEdge>> maps, HashMap<SimpleWeightedGraph<Integer, DefaultEdge>, LinkedList<Point[]>> mapToPoints) {
+    private static void performStationaryTest(LinkedList<SimpleWeightedGraph<Integer, DefaultWeightedEdge>> maps, HashMap<SimpleWeightedGraph<Integer, DefaultWeightedEdge>, LinkedList<Point[]>> mapToPoints, String print) {
         LinkedList<Double> expNodesDijkstraAverages = new LinkedList<Double>();
         LinkedList<Double> expNodesAstarAverages = new LinkedList<Double>();
         LinkedList<Double> expNodesBiAstarAverages = new LinkedList<Double>();
@@ -132,6 +137,8 @@ public class GlobalTest {
         double biastarTimeAvg = getAvg(ElapsTimeBiAstarAverages);
         double biastarTimeStdDev = getStandardDeviation(ElapsTimeBiAstarAverages,biastarTimeAvg);
 
+        System.out.println(print);
+
         System.out.println("Dijkstra\nTotal Expandend Cell: "+djkstrTotExp+"; Average Expandend Cell: "+djkstrNodeAvg+" ["+djkstrNodeStdDev+
                 "]; Elapsed Time: "+String.format("%.6f",djkstrTotTime)+"ms; Average Elapsed Time: "+String.format("%.6f",djkstrTimeAvg)+"ms ["+String.format("%.6f", djkstrTimeStdDev)+"]");
         System.out.println("A*\nTotal Expandend Cell: "+astarTotExp+"; Average Expandend Cell: "+astarNodeAvg+" ["+astarNodeStdDev+
@@ -143,16 +150,16 @@ public class GlobalTest {
 
     public void runMovingTest(){
         System.out.println("Moving Target Test\n");
-
-        System.out.println("\nTesting "+indoorMaps.size()+" indoor maps [120x120], "+NUMBER_OF_POINTS+" points for each map\n");
-        performMovingTest(indoorMaps, mapToPoints);
-        System.out.println("\nTesting "+outdoorMaps.size()+" outdoor maps [120x120], "+NUMBER_OF_POINTS+" points for each map\n");
-        performMovingTest(outdoorMaps, mapToPoints);
-        System.out.println("\nTesting "+dngMaps.size()+" dungeon maps [120x120], "+NUMBER_OF_POINTS+" points for each map\n");
-        performMovingTest(dngMaps, mapToPoints);
+        String indoorRes = performMovingTest(indoorMaps, mapToPoints, "Indoor Test: ");
+        String outdoorRes = performMovingTest(outdoorMaps, mapToPoints, "Outdoor Test: ");
+        String dungeonRes = performMovingTest(dngMaps, mapToPoints, "Dungeon Test: ");
+        System.out.println("\n"+movingTest);
+        System.out.println("\nTested "+indoorMaps.size()+" indoor maps [120x120], "+NUMBER_OF_POINTS+" points for each map\n"+indoorRes);
+        System.out.println("\nTested "+outdoorMaps.size()+" outdoor maps [120x120], "+NUMBER_OF_POINTS+" points for each map\n"+outdoorRes);
+        System.out.println("\nTested "+dngMaps.size()+" dungeon maps [120x120], "+NUMBER_OF_POINTS+" points for each map\n"+dungeonRes);
     }
 
-    private static void performMovingTest(LinkedList<SimpleWeightedGraph<Integer, DefaultEdge>> maps, HashMap<SimpleWeightedGraph<Integer, DefaultEdge>, LinkedList<Point[]>> mapToPoints) {
+    private static String performMovingTest(LinkedList<SimpleWeightedGraph<Integer, DefaultWeightedEdge>> maps, HashMap<SimpleWeightedGraph<Integer, DefaultWeightedEdge>, LinkedList<Point[]>> mapToPoints, String print) {
         LinkedList<Double> expNodesDijkstraTotals = new LinkedList<>();
         LinkedList<Double> expNodesAstarTotals = new LinkedList<Double>();
         LinkedList<Double> expNodesBiAstarTotals = new LinkedList<Double>();
@@ -161,11 +168,14 @@ public class GlobalTest {
         LinkedList<Double> ElapsTimeAstarTotals = new LinkedList<Double>();
         LinkedList<Double> ElapsTimeBiAstarTotals = new LinkedList<Double>();
         LinkedList<Double> ElapsTimeAAstarTotals = new LinkedList<Double>();
+        double percentage=0;
+        int count=0;
         int djkstrSearch =0, djkstrMoves =0;
         int astarSearch=0, astarMoves =0;
         int biastarSearch=0, biastarMoves =0;
         int aastarSearch=0, aastarMoves=0;
-        for(SimpleWeightedGraph m : maps){
+        for(SimpleWeightedGraph<Integer, DefaultWeightedEdge> m : maps){
+            System.out.println(print+(100*count/maps.size())+"% \r");
             Test t1 = new DijkstraTest(m, mapToPoints.get(m));
             Test t2 = new AStarTest(m, mapToPoints.get(m));
             Test t3 = new BidirectionalAstarTest(m, mapToPoints.get(m));
@@ -186,6 +196,12 @@ public class GlobalTest {
             ElapsTimeBiAstarTotals.add(t3.getMovingTotalElapsedTime());
             expNodesAAstarTotals.add(t4.getMovingTotalExpandedCells());
             ElapsTimeAAstarTotals.add(t4.getMovingTotalElapsedTime());
+            count++;
+            try {
+                Runtime.getRuntime().exec("clear");
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
         }
 
         double djkstrTotExp = getSum(expNodesDijkstraTotals);
@@ -197,7 +213,7 @@ public class GlobalTest {
         double djkstrRuntimePerSearch = djkstrTotTime / djkstrSearch;
 
         String djkstrRes = "DIJKSTRA\n(a): " +djkstrSearch+" (b): "+djkstrMoves+" (c): "+djkstrTotExp+" ("+djkstrNodeStdDev+"); (d): "+djkstrTotTime+
-                " ("+djkstrTimeStdDev+") (e): "+djkstrRuntimePerSearch;
+                " ("+djkstrTimeStdDev+") (e): "+djkstrRuntimePerSearch+" (f): "+djkstrTimeAvg;
 
         double astarTotExp = getSum(expNodesAstarTotals);
         double astarNodeAvg = getAvg(expNodesAstarTotals);
@@ -232,9 +248,8 @@ public class GlobalTest {
         String aastarRes = "ADAPTIVE-A*\n(a): " +aastarSearch+" (b): "+aastarMoves+" (c): "+aastarTotExp+" ("+aastarNodeStdDev+"); (d): "+aastarTotTime+
                 " ("+aastarTimeStdDev+") (e): "+aastarRuntimePerSearch;
 
-        System.out.println(movingTest);
-
-        System.out.println("\n"+djkstrRes+"\n"+astarRes+"\n"+biastarRes+"\n"+aastarRes);
+        String res = "\n"+djkstrRes+"\n"+astarRes+"\n"+biastarRes+"\n"+aastarRes;
+        return res;
     }
 
     private static Point chooseRandomPoint(GameMap map){

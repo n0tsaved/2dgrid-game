@@ -5,6 +5,7 @@ import tilemap.jgrapht.Graphs;
 import tilemap.jgrapht.alg.AStarShortestPath;
 import tilemap.jgrapht.alg.util.Trailmax;
 import tilemap.jgrapht.graph.DefaultEdge;
+import tilemap.jgrapht.graph.DefaultWeightedEdge;
 import tilemap.jgrapht.graph.SimpleWeightedGraph;
 
 import java.util.LinkedList;
@@ -49,40 +50,59 @@ public class AStarTest extends Test {
 
     @Override
     public void runMovingTest() {
+        //System.out.println("Performing A* Moving Target Test");
         long now;
         int count, search;
         elapsedTime.clear();
         expandedCells.clear();
-        GraphPath<Integer,DefaultEdge> agentPath=null;
-        GraphPath<Integer,DefaultEdge> targetPath=null;
-        Integer agentNode, targetNode;
+        GraphPath<Integer,DefaultWeightedEdge> agentPath=null;
+        GraphPath<Integer,DefaultWeightedEdge> targetPath=null;
+        //Integer agentNode, targetNode;
         List<Integer> pathToFollow = null;
         for(Point[] p : points){
+
+
+
             count=0;
             search=0;
             agentNode = p[0].toNode();
             targetNode = p[1].toNode();
             LinkedList<Integer> movingExpCell = new LinkedList<>();
             LinkedList<Long> movingElapsTime = new LinkedList<>();
+            pathfinder = new AStarShortestPath<>(map);
+            targetThread r = new targetThread();
+            evadeThread = new Thread(r);
+
+            evadeThread.start();
             while(!agentNode.equals(targetNode)){
-                if(pathToFollow==null || !agentPath.getEndVertex().equals(targetNode)) {
-                    pathfinder = new AStarShortestPath<>(map);
-                    now = System.currentTimeMillis();
+                //System.out.println(agentNode+", "+targetNode);
+                if(pathToFollow==null ||((agentPath!=null) && !agentPath.getEndVertex().equals(targetNode))) {
                     agentPath = pathfinder.getShortestPath(agentNode, targetNode, new OctileDistance());
-                    movingElapsTime.add(System.currentTimeMillis() - now);
+                    movingElapsTime.add(pathfinder.getElapsedTime());
                     movingExpCell.add(pathfinder.getNumberOfExpandedNodes());
                     search++;
                 }
                 Integer targetNext = null;
                 Integer agentNext = null;
                 if(count%2==0) {
-                    targetPath = new Trailmax<Integer,DefaultEdge>(map).getShortestPath(agentNode,targetNode,null);
+
+                    synchronized(moveTarget) {
+                        moveTarget = new Boolean(true);
+                    }
+
+                    try {
+                        Thread.sleep(10);
+                    } catch (InterruptedException e) {
+                        e.printStackTrace();
+                    }
+                    /*targetPath = new Trailmax<Integer,DefaultWeightedEdge>(map).getShortestPath(agentNode,targetNode,null);
                     pathToFollow = Graphs.getPathVertexList(targetPath);
                     if (!pathToFollow.isEmpty()) targetNext = pathToFollow.remove(0);
                     if (targetNext.equals(targetNode) && !pathToFollow.isEmpty()) targetNext = pathToFollow.remove(0);
-                    targetNode = targetNext;
+                    targetNode = targetNext;*/
                 }
-                pathToFollow=Graphs.getPathVertexList(agentPath);
+                if(agentPath!= null)
+                    pathToFollow=Graphs.getPathVertexList(agentPath);
                 if(!pathToFollow.isEmpty()){
                     int i = pathToFollow.lastIndexOf(agentNode);
                     agentNext=pathToFollow.remove(i+1);
@@ -90,11 +110,24 @@ public class AStarTest extends Test {
                 agentNode = agentNext;
                 count++;
             }
+            r.terminate();
+            try {
+                evadeThread.join();
+            } catch (InterruptedException e) {
+                e.printStackTrace();
+            }
             pathToFollow=null;
             movingElapsedTime.put(p, movingElapsTime);
             movingExpandedCells.put(p, movingExpCell);
             movesMap.put(p, count);
             searchesMap.put(p, search);
+            if(verbose) {
+                Long totElaps = Long.valueOf(0);
+                Integer totExp = 0;
+                for (Long l : movingElapsTime) totElaps += l;
+                for (Integer i : movingExpCell) totExp += i;
+                System.out.println("total elapsed: " + totElaps + " total expanded " + totExp);
+            }
         }
     }
 }

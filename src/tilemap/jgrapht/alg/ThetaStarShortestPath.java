@@ -7,6 +7,7 @@ import tilemap.jgrapht.graph.DefaultEdge;
 import tilemap.jgrapht.graph.DefaultWeightedEdge;
 import tilemap.jgrapht.graph.GraphPathImpl;
 import tilemap.jgrapht.graph.SimpleWeightedGraph;
+import tilemap.jgrapht.util.FibonacciHeap;
 import tilemap.jgrapht.util.FibonacciHeapNode;
 
 import java.util.Set;
@@ -17,15 +18,41 @@ import tilemap.jgrapht.alg.interfaces.Pathfinder;
 /**
  * Created by notsaved on 8/29/16.
  */
-public class ThetaStarShortestPath<V extends Integer ,E> extends AStarShortestPath {
+public class ThetaStarShortestPath<V extends Integer ,E>  {
 
-    public ThetaStarShortestPath(Graph<V, E> graph) {
-        super(graph);
+
+    protected final SimpleWeightedGraph<V, E> graph;
+
+    //List of open nodes
+    protected FibonacciHeap<V> openList;
+    protected Map<V, FibonacciHeapNode<V>> vertexToHeapNodeMap;
+    //List of closed nodes
+    protected Set<V> closedList;
+    //Mapping of nodes to their g-scores (g(x)).
+    protected Map<V, Double> gScoreMap;
+    //Predecessor map: mapping of a node to an edge that leads to its predecessor on its shortest path towards the targetVertex
+    protected Map<V,V> cameFrom;
+    //Reference to the admissible heuristic
+    protected AStarAdmissibleHeuristic<V> admissibleHeuristic;
+    //Counter which keeps track of the number of expanded nodes
+    protected int numberOfExpandedNodes;
+    private long elapsedTime = Long.MAX_VALUE;
+
+    public ThetaStarShortestPath(SimpleWeightedGraph<V, E> graph) {
+        this.graph=graph;
     }
 
+    protected void initialize(AStarAdmissibleHeuristic<V> admissibleHeuristic){
+        this.admissibleHeuristic =admissibleHeuristic;
+        openList = new FibonacciHeap<V>();
+        vertexToHeapNodeMap=new HashMap<V, FibonacciHeapNode<V>>();
+        closedList = new HashSet<V>();
+        gScoreMap = new HashMap<V, Double>();
+        cameFrom=new HashMap<V,V>();
+        numberOfExpandedNodes =0;
+    }
 
-
-    public GraphPath<V,E> getShortestPath(V sourceVertex, V targetVertex, AStarAdmissibleHeuristic<V> admissibleHeuristic){
+    public List<V> getShortestPath(V sourceVertex, V targetVertex, AStarAdmissibleHeuristic<V> admissibleHeuristic){
         if(!graph.containsVertex(sourceVertex) || !graph.containsVertex(targetVertex))
             throw new IllegalArgumentException("Source or target vertex not contained in the graph!");
 
@@ -40,7 +67,7 @@ public class ThetaStarShortestPath<V extends Integer ,E> extends AStarShortestPa
             //Check whether we reached the target vertex
             if (currentNode.getData().equals(targetVertex)){
                 //Build the path
-                return this.buildGraphPath(sourceVertex, targetVertex, currentNode.getKey());
+                return this.buildPath(targetVertex);
             }
             //We haven't reached the target vertex yet; expand the node
             expandNode(currentNode, targetVertex);
@@ -61,7 +88,6 @@ public class ThetaStarShortestPath<V extends Integer ,E> extends AStarShortestPa
             outgoingEdges=graph.edgesOf(currentNode.getData());
         else if(graph instanceof DirectedGraph)
             outgoingEdges=((DirectedGraph)graph).outgoingEdgesOf(currentNode.getData());
-        V parent = null;
 
         for(E edge : outgoingEdges){
             lof=false;
@@ -70,10 +96,9 @@ public class ThetaStarShortestPath<V extends Integer ,E> extends AStarShortestPa
                 continue;
             double gScore_current = (double) gScoreMap.get(currentNode.getData());
             double tentativeGScore =0;
-            E parentEdge = (E) cameFrom.get(currentNode.getData());
-            if(parentEdge!= null) parent = (V) graph.getEdgeSource(parentEdge);
-            if(parent!= null &&
-                    GameMap.lineOfSight((int) parent%GameMap.WIDTH, (int) parent/ GameMap.WIDTH, (int) successor%GameMap.WIDTH, (int) successor/GameMap.WIDTH))
+            V parent =  cameFrom.get(currentNode.getData());
+            if(parent!= null) lof=GameMap.lineOfSight((int) parent%GameMap.WIDTH, (int) parent/ GameMap.WIDTH, (int) successor%GameMap.WIDTH, (int) successor/GameMap.WIDTH);
+            if(lof)
             {
                 tentativeGScore=(double) gScoreMap.get(parent) +getDist(parent, successor);
                 lof=true;
@@ -87,7 +112,7 @@ public class ThetaStarShortestPath<V extends Integer ,E> extends AStarShortestPa
 
                // if(lof) cameFrom.put(successor,parentEdge);
                 //else cameFrom.put(successor, edge);
-                cameFrom.put(successor, edge);
+                cameFrom.put(successor, parent);
                 gScoreMap.put(successor, tentativeGScore);
 
                 double fScore= tentativeGScore + admissibleHeuristic.getCostEstimate(successor, endVertex);
@@ -118,17 +143,21 @@ public class ThetaStarShortestPath<V extends Integer ,E> extends AStarShortestPa
         List<E> edgeList = this.buildPath(targetVertex);
         return new GraphPathImpl<V, E>(fakeGraph, startVertex, targetVertex, edgeList, pathLength);
 
+    }*/
+
+    private List<V> buildPath(V currentNode){
+        V current = currentNode;
+        V next;
+        ArrayList<V> list = new ArrayList<V>();
+        while(current != null){
+            list.add(current);
+            current = cameFrom.get(current);
+        }
+
+        Collections.reverse(list);
+        return list;
     }
 
-    private List<E> buildPath(V currentNode){
-        if(cameFrom.containsKey(currentNode)){
-            List<E> path = buildPath(Graphs.getOppositeVertex((Graph<V, E>) graph, (E) cameFrom.get(currentNode), (V) currentNode));
-            path.add((E) cameFrom.get(currentNode));
-            return path;
-            }else
-                return new ArrayList<E>();
-    }
-*/
 
     private double getDist(V sourceVertex, V targetVertex) {
         int sourceX, sourceY, targetX, targetY;

@@ -4,6 +4,7 @@ import tilemap.jgrapht.GraphPath;
 import tilemap.jgrapht.Graphs;
 import tilemap.jgrapht.alg.util.Trailmax;
 import tilemap.jgrapht.graph.DefaultEdge;
+import tilemap.jgrapht.graph.DefaultWeightedEdge;
 
 import java.awt.*;
 import java.util.LinkedList;
@@ -133,12 +134,12 @@ public class Player {
         Entity e = enemies.getFirst();
         Integer agentNode = e.getNode();
         Integer targetNode = this.getNode();
-        Trailmax<Integer, DefaultEdge> t = new Trailmax<>(gameMap.getGraph());
-        GraphPath<Integer, DefaultEdge> p = t.getShortestPath(agentNode, targetNode, null);
+        Trailmax<Integer, DefaultWeightedEdge> t = new Trailmax<>(gameMap.getGraph());
+        GraphPath<Integer, DefaultWeightedEdge> p = t.getShortestPath(agentNode, targetNode, null);
         colorEvasionPath(p, e);
     }
 
-    private void colorEvasionPath(GraphPath<Integer, DefaultEdge> p, Entity e) {
+    private void colorEvasionPath(GraphPath<Integer, DefaultWeightedEdge> p, Entity e) {
         Tile[][] map = gameMap.getData();
         if(p == null) return;
         System.out.println("player evades enemy "+e.getImage());

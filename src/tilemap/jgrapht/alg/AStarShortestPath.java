@@ -39,6 +39,7 @@ import tilemap.jgrapht.*;
 import tilemap.jgrapht.alg.interfaces.AStarAdmissibleHeuristic;
 import tilemap.jgrapht.alg.interfaces.Pathfinder;
 import tilemap.jgrapht.graph.GraphPathImpl;
+import tilemap.jgrapht.graph.SimpleWeightedGraph;
 import tilemap.jgrapht.util.FibonacciHeap;
 import tilemap.jgrapht.util.FibonacciHeapNode;
 
@@ -68,7 +69,7 @@ import java.util.*;
  */
 public class AStarShortestPath<V,E> implements Pathfinder<V,E> {
 
-    protected final Graph<V, E> graph;
+    protected final SimpleWeightedGraph<V, E> graph;
 
     //List of open nodes
     protected FibonacciHeap<V> openList;
@@ -83,9 +84,11 @@ public class AStarShortestPath<V,E> implements Pathfinder<V,E> {
     protected AStarAdmissibleHeuristic<V> admissibleHeuristic;
     //Counter which keeps track of the number of expanded nodes
     protected int numberOfExpandedNodes;
+    private long elapsedTime = Long.MAX_VALUE;
+    private boolean verbose=true;
 
 
-    public AStarShortestPath(Graph<V, E> graph) {
+    public AStarShortestPath(SimpleWeightedGraph<V, E> graph) {
         if(graph==null)
             throw new IllegalArgumentException("Graph cannot be null!");
         this.graph = graph;
@@ -124,12 +127,16 @@ public class AStarShortestPath<V,E> implements Pathfinder<V,E> {
         FibonacciHeapNode<V> heapNode=new FibonacciHeapNode<V>(sourceVertex);
         openList.insert(heapNode, 0.0);
         vertexToHeapNodeMap.put(sourceVertex, heapNode);
-
+        long now = System.currentTimeMillis();
         do {
             FibonacciHeapNode<V> currentNode = openList.removeMin();
             //Check whether we reached the target vertex
             if (currentNode.getData().equals(targetVertex)){
                 //Build the path
+                elapsedTime= System.currentTimeMillis() - now;
+                if(verbose)
+                    System.out.println("["+this.getClass()+"] source: "+sourceVertex+" target: "+targetVertex+" elapsed: "+elapsedTime+" expanded: "+numberOfExpandedNodes);
+
                 return this.buildGraphPath(sourceVertex, targetVertex, currentNode.getKey());
             }
             //We haven't reached the target vertex yet; expand the node
@@ -217,6 +224,10 @@ public class AStarShortestPath<V,E> implements Pathfinder<V,E> {
      */
     public int getNumberOfExpandedNodes(){
         return numberOfExpandedNodes;
+    }
+
+    public long getElapsedTime(){
+        return elapsedTime;
     }
 
 

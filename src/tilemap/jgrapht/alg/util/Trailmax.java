@@ -23,10 +23,9 @@ public class Trailmax<V,E> implements Pathfinder<V,E>{
     private Set<V> agentClosed, targetClosed;
     private FibonacciHeapNode<V> last;
     private int expandedNodes;
+    private long elapsedTime = Long.MAX_VALUE;
 
-
-    public Trailmax(Graph<V, E> graph) {
-        this.graph = graph;
+    private void initialize(){
         agentQueue = new FibonacciHeap<V>();
         targetQueue = new FibonacciHeap<V>();
         agentGScoreMap = new HashMap<V,Double>();
@@ -38,6 +37,11 @@ public class Trailmax<V,E> implements Pathfinder<V,E>{
         targetVertexToHeapNodeMap = new HashMap<V, FibonacciHeapNode<V>>();
     }
 
+    public Trailmax(Graph<V, E> graph) {
+        this.graph = graph;
+
+    }
+
 
 
     @Override
@@ -45,6 +49,7 @@ public class Trailmax<V,E> implements Pathfinder<V,E>{
         if(!graph.containsVertex(sourceVertex) || !graph.containsVertex(targetVertex))
             throw new IllegalArgumentException("Source or target vertex not contained in the graph!");
 
+        initialize();
         agentGScoreMap.put(sourceVertex, 0.0);
         targetGScoreMap.put(targetVertex, 0.0);
         FibonacciHeapNode<V> sourceHeapNode=new FibonacciHeapNode<V>(sourceVertex);
@@ -53,6 +58,7 @@ public class Trailmax<V,E> implements Pathfinder<V,E>{
         targetVertexToHeapNodeMap.put(targetVertex, targetHeapNode);
         agentQueue.insert(sourceHeapNode, 0.0);
         targetQueue.insert(targetHeapNode, 0.0);
+        long now = System.currentTimeMillis();
         do{
 
             FibonacciHeapNode<V> currentA = agentQueue.removeMin();
@@ -60,8 +66,10 @@ public class Trailmax<V,E> implements Pathfinder<V,E>{
             expandAgent(currentA);
             expandTarget(currentT);
         }while(!agentClosed.containsAll(targetClosed) && !agentQueue.isEmpty() && !targetQueue.isEmpty());
-        if(agentClosed.containsAll(targetClosed))
+        if(agentClosed.containsAll(targetClosed)) {
+            elapsedTime = System.currentTimeMillis() - now;
             return this.buildGraphPath(targetVertex, last.getData(), last.getKey());
+        }
         return null;
     }
 
@@ -158,6 +166,11 @@ public class Trailmax<V,E> implements Pathfinder<V,E>{
 
     public int getNumberOfExpandedNodes(){
         return expandedNodes;
+    }
+
+    @Override
+    public long getElapsedTime() {
+        return elapsedTime;
     }
 
 

@@ -6,6 +6,7 @@ import tilemap.jgrapht.alg.AStarShortestPath;
 import tilemap.jgrapht.alg.BidirectionalAStarShortestPath;
 import tilemap.jgrapht.alg.util.Trailmax;
 import tilemap.jgrapht.graph.DefaultEdge;
+import tilemap.jgrapht.graph.DefaultWeightedEdge;
 import tilemap.jgrapht.graph.SimpleWeightedGraph;
 
 import java.util.LinkedList;
@@ -24,7 +25,7 @@ public class BidirectionalAstarTest extends Test{
 
     @Override
     public void runStationaryTest() {
-        GraphPath<Integer,DefaultEdge> path;
+        GraphPath<Integer,DefaultWeightedEdge> path;
         long now;
         Integer next;
         for(Point[] p : points){
@@ -49,14 +50,15 @@ public class BidirectionalAstarTest extends Test{
     }
 
     @Override
-    public void runMovingTest() {
+    public void runMovingTest(){
+        //System.out.println("Performing Bidirectional-A* Moving Target Test");
         long now;
         int count, search;
         elapsedTime.clear();
         expandedCells.clear();
-        GraphPath<Integer,DefaultEdge> agentPath=null;
-        GraphPath<Integer,DefaultEdge> targetPath=null;
-        Integer agentNode, targetNode;
+        GraphPath<Integer,DefaultWeightedEdge> agentPath=null;
+        GraphPath<Integer,DefaultWeightedEdge> targetPath=null;
+        //Integer agentNode, targetNode;
         List<Integer> pathToFollow = null;
         for(Point[] p : points){
             count=0;
@@ -65,23 +67,35 @@ public class BidirectionalAstarTest extends Test{
             targetNode = p[1].toNode();
             LinkedList<Integer> movingExpCell = new LinkedList<>();
             LinkedList<Long> movingElapsTime = new LinkedList<>();
+            pathfinder = new BidirectionalAStarShortestPath<>(map);
+            targetThread r = new targetThread();
+            evadeThread = new Thread(r);
+
+            evadeThread.start();
             while(!agentNode.equals(targetNode)){
                 if(pathToFollow==null || !agentPath.getEndVertex().equals(targetNode)) {
-                    pathfinder = new BidirectionalAStarShortestPath<>(map);
-                    now = System.currentTimeMillis();
                     agentPath = pathfinder.getShortestPath(agentNode, targetNode, new OctileDistance());
-                    movingElapsTime.add(System.currentTimeMillis() - now);
+                    movingElapsTime.add(pathfinder.getElapsedTime());
                     movingExpCell.add(pathfinder.getNumberOfExpandedNodes());
                     search++;
                 }
                 Integer targetNext = null;
                 Integer agentNext = null;
                 if(count%2==0) {
-                    targetPath = new Trailmax<Integer,DefaultEdge>(map).getShortestPath(agentNode,targetNode,null);
+                    /*targetPath = new Trailmax<Integer,DefaultWeightedEdge>(map).getShortestPath(agentNode,targetNode,null);
                     pathToFollow = Graphs.getPathVertexList(targetPath);
                     if (!pathToFollow.isEmpty()) targetNext = pathToFollow.remove(0);
                     if (targetNext.equals(targetNode) && !pathToFollow.isEmpty()) targetNext = pathToFollow.remove(0);
-                    targetNode = targetNext;
+                    targetNode = targetNext;*/
+                    synchronized(moveTarget) {
+                        moveTarget = new Boolean(true);
+                    }
+
+                    try {
+                        Thread.sleep(10);
+                    } catch (InterruptedException e) {
+                        e.printStackTrace();
+                    }
                 }
                 pathToFollow=Graphs.getPathVertexList(agentPath);
                 if(!pathToFollow.isEmpty()){
@@ -91,6 +105,13 @@ public class BidirectionalAstarTest extends Test{
                 agentNode = agentNext;
                 count++;
 
+            }
+            //evadeThread.interrupt();
+            r.terminate();
+            try {
+                evadeThread.join();
+            } catch (InterruptedException e) {
+                e.printStackTrace();
             }
             pathToFollow=null;
             movingElapsedTime.put(p, movingElapsTime);

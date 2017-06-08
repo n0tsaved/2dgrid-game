@@ -13,9 +13,9 @@ import java.util.LinkedList;
 public class GameMap {
 
     /** The width in grid cells of our map */
-    public static final int WIDTH = 120 ;
+    public static final int WIDTH = 128;
     /** The height in grid cells of our map */
-    public static final int HEIGHT = 120;
+    public static final int HEIGHT = 128;
 
     /** The rendered size of the tile (in pixels) */
 
@@ -47,9 +47,12 @@ public class GameMap {
         mapGnrtr.generate(this);
         completeGraph = new SimpleWeightedGraph<Integer, DefaultWeightedEdge>(DefaultWeightedEdge.class);
 
-        for(int i=0; i< WIDTH*HEIGHT; i++)
-            completeGraph.addVertex(new Integer(i));
-        generateCompleteGraph();
+        for(int i=0; i< WIDTH*HEIGHT; i++) {
+            Integer t = new Integer(i);
+            if (!blocked(t%WIDTH, t/WIDTH))
+                completeGraph.addVertex(t);
+        }
+        connectGraphVertex();
 
     //System.out.println(completeGraph.toString());
         // create some default map data - it would be way
@@ -83,7 +86,7 @@ public class GameMap {
     }
 
 
-    private void generateCompleteGraph() {
+    private void connectGraphVertex() {
         for(int i=0;i<WIDTH;i++) {
             for (int j = 0; j < HEIGHT; j++) {
                 //System.out.println("pivot (" + i + "," + j + ")");
@@ -92,33 +95,40 @@ public class GameMap {
                     completeGraph.addEdge(toNode(i, j), toNode(i - 1, j), new DefaultWeightedEdge());
                 if (!blocked(i, j - 1)) //add up
                     completeGraph.addEdge(toNode(i, j), toNode(i, j - 1), new DefaultWeightedEdge());
-                if (!blocked(i - 1, j - 1)) { //add sxup
-                    DefaultWeightedEdge e = new DefaultWeightedEdge();
-                    completeGraph.addEdge(toNode(i, j), toNode(i - 1, j - 1), e);
-                    completeGraph.setEdgeWeight(e, SQRT2);
+                if (!blocked(i - 1, j - 1) ) { //add sxup
+                    if(!blocked(i-1,j) && !blocked(i,j-1)) {
+                        DefaultWeightedEdge e = new DefaultWeightedEdge();
+                        completeGraph.setEdgeWeight(e, SQRT2);
+                        completeGraph.addEdge(toNode(i, j), toNode(i - 1, j - 1), e);
+                    }
                 }
                 if (!blocked(i + 1, j - 1)) { // add dxup
-                    DefaultWeightedEdge e = new DefaultWeightedEdge();
-                    completeGraph.addEdge(toNode(i, j), toNode(i + 1, j - 1), new DefaultWeightedEdge());
-                    completeGraph.setEdgeWeight(e, SQRT2);
+                    if(!blocked(i, j-1) && !blocked(i+1, j)) {
+                        DefaultWeightedEdge e = new DefaultWeightedEdge();
+                        completeGraph.setEdgeWeight(e, SQRT2);
+                        completeGraph.addEdge(toNode(i, j), toNode(i + 1, j - 1), e);
+                    }
                 }
                 if (!blocked(i + 1, j)) //add dx
                     completeGraph.addEdge(toNode(i, j), toNode(i + 1, j), new DefaultWeightedEdge());
                 if (!blocked(i + 1, j + 1)){ //add dxdown
-                    DefaultWeightedEdge e = new DefaultWeightedEdge();
-                    completeGraph.addEdge(toNode(i, j), toNode(i + 1, j + 1), new DefaultWeightedEdge());
-                    completeGraph.setEdgeWeight(e, SQRT2);
+                    if(!blocked(i+1, j) && !blocked(i, j+1)) {
+                        DefaultWeightedEdge e = new DefaultWeightedEdge();
+                        completeGraph.setEdgeWeight(e, SQRT2);
+                        completeGraph.addEdge(toNode(i, j), toNode(i + 1, j + 1), e);
+                    }
             }
                 if (!blocked(i, j + 1)) //add down
                     completeGraph.addEdge(toNode(i, j), toNode(i, j + 1), new DefaultWeightedEdge());
                 if (!blocked(i - 1, j + 1)) { //add sxdown
-                    DefaultWeightedEdge e = new DefaultWeightedEdge();
-                    completeGraph.addEdge(toNode(i, j), toNode(i - 1, j + 1), new DefaultWeightedEdge());
-                    completeGraph.setEdgeWeight(e, SQRT2);
+                    if(!blocked(i-1, j) && !blocked(i, j+1)) {
+                        DefaultWeightedEdge e = new DefaultWeightedEdge();
+                        completeGraph.setEdgeWeight(e, SQRT2);
+                        completeGraph.addEdge(toNode(i, j), toNode(i - 1, j + 1), e);
+                    }
                 }
             }
         }
-
     }
 
 
@@ -201,7 +211,7 @@ public class GameMap {
         return obstcls.add(obst);
     }
 
-    public SimpleWeightedGraph getGraph() {
+    public SimpleWeightedGraph<Integer, DefaultWeightedEdge> getGraph() {
         return completeGraph;
     }
 

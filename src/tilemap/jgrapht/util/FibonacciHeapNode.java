@@ -26,7 +26,7 @@ package tilemap.jgrapht.util;
  *
  * @author Nathan Fiedler
  */
-public class FibonacciHeapNode<T>
+public class FibonacciHeapNode<T> implements Comparable<FibonacciHeapNode<T>>
 {
     /**
      * Node data.
@@ -107,6 +107,14 @@ public class FibonacciHeapNode<T>
     public String toString()
     {
         return Double.toString(key);
+    }
+
+    @Override
+    public int compareTo(FibonacciHeapNode<T> other) {
+        if(other == null)
+            throw new NullPointerException("Other object to be compared must be non-null");
+
+        return Double.compare(this.getKey(),other.getKey());
     }
 
     // toString

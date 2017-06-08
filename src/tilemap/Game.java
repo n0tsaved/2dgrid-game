@@ -1,7 +1,11 @@
 package tilemap;
 
 import tilemap.jgrapht.alg.BidirectionalAStarShortestPath;
+import tilemap.jgrapht.alg.LazyMovingTargetAdaptiveAStarShortestPath;
+import tilemap.jgrapht.alg.ThetaStarShortestPath;
+import tilemap.jgrapht.alg.util.Trailmax;
 import tilemap.jgrapht.graph.DefaultEdge;
+import tilemap.jgrapht.graph.DefaultWeightedEdge;
 
 import java.awt.*;
 import java.awt.event.WindowAdapter;
@@ -23,8 +27,7 @@ public class Game extends Canvas{
 
 
     private GameController controller;
-    private int fps;
-    private final static int MS_PER_UPDATE = 1000000000/2;
+
 
 
     public Game() {
@@ -37,7 +40,7 @@ public class Game extends Canvas{
         setBounds(0,0,800,800);
         frame.add(this);
         frame.setSize(800,800);
-        frame.setResizable(false);
+        frame.setResizable(true);
 
         // add a listener to respond to the window closing so we can
         // exit the game
@@ -88,8 +91,8 @@ public class Game extends Canvas{
         player.setGameMap(gameMap);
         player.spawn();
         controller= new GameController( this, player);
-        enemies.add(new Entity("#", gameMap, new BidirectionalAStarShortestPath<Integer, DefaultEdge>(gameMap.getGraph())));
-        enemies.add(new Entity("§", gameMap, new BidirectionalAStarShortestPath<Integer, DefaultEdge>(gameMap.getGraph())));
+        enemies.add(new Entity("#", gameMap, new BidirectionalAStarShortestPath<Integer, DefaultWeightedEdge>(gameMap.getGraph())));
+        enemies.add(new Entity("§", gameMap, new BidirectionalAStarShortestPath<Integer, DefaultWeightedEdge>(gameMap.getGraph())));
         //for(Entity e : enemies)
         //    e.spawn();
 
@@ -141,16 +144,13 @@ public class Game extends Canvas{
 
             long delta=updateLenght/(OPTIMAL_TIME);
             lastFpsTime+=updateLenght;
-            fps++;
 
             while (lastFpsTime >= 1000000000/2)
             {
 
                 //System.out.println("(FPS: "+fps+")");
-                for(Entity e : enemies)
-                    //e.move();
+
                 lastFpsTime -= 1000000000/2;
-                fps = 0;
 
             }
 
@@ -169,6 +169,9 @@ public class Game extends Canvas{
             if ((delta % 5) != 0)
                 controller.logic(delta % 5);
             //}
+
+            for(Entity e : enemies)
+                e.update(delta);
             Thread.sleep( Math.abs((last-System.nanoTime() + OPTIMAL_TIME)/1000000) );
 
         }
@@ -181,12 +184,15 @@ public class Game extends Canvas{
         for(Entity e : enemies) {
             e.setGameMap(gameMap);
             e.spawn();
-            if(e.getImage().equals("#")) e.setPath(new BidirectionalAStarShortestPath<Integer, DefaultEdge>(gameMap.getGraph()));
-            else e.setPath(new BidirectionalAStarShortestPath<Integer, DefaultEdge>(gameMap.getGraph()));
-            if(gameMap.lineOfSight(player.getCoords()[0], player.getCoords()[1], e.getX(), e.getY()))
+            //e.setPathfinder(new BidirectionalAStarShortestPath<Integer, DefaultWeightedEdge>(gameMap.getGraph()));
+            if(gameMap.lineOfSight(player.getCoords()[0], player.getCoords()[1], (int) e.getX(),(int) e.getY()))
                 System.out.println("player is in the lof of "+ e.getImage());
         }
-        player.showEvasionPath();
+        Entity e1 = enemies.getFirst();
+        Entity e2 = enemies.getLast();
+        e1.setBehaviour(new FollowBehaviour(e1, e2, new LazyMovingTargetAdaptiveAStarShortestPath<Integer, DefaultWeightedEdge>(gameMap.getGraph())));
+        e2.setBehaviour(new FleeBehaviour(e2,e1, new Trailmax<Integer, DefaultWeightedEdge>(gameMap.getGraph())));
+        //player.showEvasionPath();
 
     }
 
@@ -197,9 +203,9 @@ public class Game extends Canvas{
      */
     public static void main(String[] argv) throws InterruptedException {
 
-        //final Game g = new Game();
-        //g.gameLoop();
-        GlobalTest t = new GlobalTest();
-        t.runMovingTest();
+        final Game g = new Game();
+        g.gameLoop();
+        //GlobalTest t = new GlobalTest();
+        //t.runMovingTest();
     }
 }

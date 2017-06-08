@@ -2,17 +2,12 @@ package tilemap;
 
 import tilemap.jgrapht.GraphPath;
 import tilemap.jgrapht.Graphs;
-import tilemap.jgrapht.alg.AStarShortestPath;
-import tilemap.jgrapht.alg.BidirectionalAStarShortestPath;
-import tilemap.jgrapht.alg.DijkstraShortestPath;
-import tilemap.jgrapht.alg.MovingTargetAdaptiveAStarShortestPath;
 import tilemap.jgrapht.alg.interfaces.AStarAdmissibleHeuristic;
 import tilemap.jgrapht.alg.interfaces.Pathfinder;
-import tilemap.jgrapht.graph.DefaultEdge;
-import tilemap.Point;
+import tilemap.jgrapht.alg.util.Trailmax;
+import tilemap.jgrapht.graph.DefaultWeightedEdge;
 import tilemap.jgrapht.graph.SimpleWeightedGraph;
 
-import java.awt.*;
 import java.util.*;
 import java.util.List;
 
@@ -21,7 +16,7 @@ import java.util.List;
  */
 public abstract class Test  {
 
-    protected SimpleWeightedGraph map;
+    protected SimpleWeightedGraph<Integer, DefaultWeightedEdge> map;
     protected List<Point[]> points;
     protected Map<Point[], Long> elapsedTime = new HashMap<>();
     protected Map<Point[], Integer> expandedCells = new HashMap<>();
@@ -29,10 +24,14 @@ public abstract class Test  {
     protected Map<Point[], LinkedList<Long>> movingElapsedTime = new HashMap<>();
     protected Map<Point[], Integer> movesMap = new HashMap<>();
     protected Map<Point[], Integer> searchesMap = new HashMap<>();
-    protected Pathfinder<Integer, DefaultEdge> pathfinder;
+    protected Pathfinder<Integer, DefaultWeightedEdge> pathfinder;
     protected String result;
     protected double expandedNodeAverage;
     protected double elapsedTimeAverage;
+    protected boolean verbose = true;
+    protected Integer agentNode, targetNode;
+    protected Boolean moveTarget = new Boolean(false);
+    protected Thread evadeThread = null;
    /* private Map<Point[],Long> executionTime = new HashMap<>();
     private HashMap<Point[], List<Pathfinder<Integer, DefaultEdge>>> pathfinders = new HashMap<>();
 
@@ -47,13 +46,7 @@ public abstract class Test  {
 
     public abstract void runMovingTest();
 
-    public double getMovingTotalElapsedTime() {
-        double tot =0;
-        for(Point[] p : points)
-            for(Long l : movingElapsedTime.get(p))
-                tot+=l;
-        return tot;
-    }
+
     /*
     public void runStationaryTest(){
         long now;
@@ -125,6 +118,14 @@ public abstract class Test  {
         return tot;
     }
 
+    public double getMovingTotalElapsedTime() {
+        double tot =0;
+        for(Point[] p : points)
+            for(Long l : movingElapsedTime.get(p))
+                tot+=l;
+        return tot;
+    }
+
     public double getMovingTotalSearches(){
         double tot=0;
         for(Point[] p : points)
@@ -190,5 +191,43 @@ public abstract class Test  {
         for(Point[] p: points)
             aux += (expandedCells.get(p) - expandedNodeAverage)*(expandedCells.get(p) - expandedNodeAverage);
         return aux/points.size();
+    }
+
+
+    protected class targetThread implements Runnable{
+
+
+        private volatile boolean running = true;
+
+        public void terminate() {
+            running = false;
+        }
+
+        @Override
+        public void run() {
+            GraphPath<Integer,DefaultWeightedEdge> targetPath=null;
+            List<Integer> path = null;
+            Integer targetNext = null;
+            while(running){
+                if(path==null || path.isEmpty()) {
+                    targetPath = new Trailmax<Integer, DefaultWeightedEdge>(map).getShortestPath(agentNode, targetNode, null);
+                    path = Graphs.getPathVertexList(targetPath);
+                }
+               synchronized (moveTarget) {
+                    if (moveTarget) {
+                        //System.out.println(agentNode+", "+targetNode);
+                        if (!path.isEmpty()) targetNext = path.remove(0);
+                        if (targetNext.equals(targetNode) && !path.isEmpty()) targetNext = path.remove(0);
+                        targetNode = targetNext;
+                        moveTarget=!moveTarget;
+                        try {
+                            Thread.sleep(3);
+                        } catch (InterruptedException e) {
+                            e.printStackTrace();
+                        }
+                   }
+                }
+            }
+        }
     }
 }

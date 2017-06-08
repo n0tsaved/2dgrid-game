@@ -121,12 +121,12 @@ public class FibonacciHeap<T>
 
         FibonacciHeapNode<T> y = x.parent;
 
-        if ((y != null) && (x.key < y.key)) {
+        if ((y != null) && (x.compareTo(y)<0)) {
             cut(x, y);
             cascadingCut(y);
         }
 
-        if (x.key < minNode.key) {
+        if (x.compareTo(minNode)<0) {
             minNode = x;
         }
     }
@@ -182,7 +182,7 @@ public class FibonacciHeap<T>
             minNode.right = node;
             node.right.left = node;
 
-            if (key < minNode.key) {
+            if (node.compareTo(minNode)<0) {
                 minNode = node;
             }
         } else {
@@ -324,7 +324,7 @@ public class FibonacciHeap<T>
                     h.minNode.right = h2.minNode;
                     h2.minNode.left = h.minNode;
 
-                    if (h2.minNode.key < h1.minNode.key) {
+                    if (h2.minNode.compareTo(h1.minNode) < 0) {
                         h.minNode = h2.minNode;
                     }
                 }
@@ -466,7 +466,7 @@ public class FibonacciHeap<T>
 
                 // There is, make one of the nodes a child of the other.
                 // Do this based on the key value.
-                if (x.key > y.key) {
+                if (x.compareTo(y) > 0) {
                     FibonacciHeapNode<T> temp = y;
                     y = x;
                     x = temp;
@@ -512,7 +512,7 @@ public class FibonacciHeap<T>
                 y.right.left = y;
 
                 // Check if this is a new min.
-                if (y.key < minNode.key) {
+                if (y.compareTo(minNode) < 0) {
                     minNode = y;
                 }
             } else {

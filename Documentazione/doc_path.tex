@@ -1,0 +1,1269 @@
+\documentclass[11pt]{book}
+%Gummi|065|=)
+\title{\textbf{Pathfinding su giochi grid-based}}
+\author{Lentisco Francesco\\
+N86001092}
+\date{}
+\usepackage{graphicx}
+\usepackage[linesnumbered,algoruled,boxed,lined]{algorithm2e}
+\usepackage{float}
+\usepackage{fancyvrb}
+\usepackage{cprotect}
+\usepackage{listings}
+\usepackage{color}
+\usepackage{amsfonts}
+% or
+\usepackage{amssymb}
+
+\usepackage{amsmath}
+\begin{document}
+
+\maketitle
+
+\SetKwProg{Fn}{Function}{}{}
+
+\chapter{Introduzione}
+
+Un gioco grid-based (o tile-based) \`e un tipo di videogioco dove l'area di gioco consiste in una matrice di locazioni quadrate dette \emph{tiles} che simulano una veduta dall'alto di una regione bidimensionale. L'insieme dei tile disponibili \`e chiamato \emph{tileset}. In particolare, una mappa consiste in una griglia di larghezza e di altezza fissate ed ogni tile pu\`o essere traversabile o bloccato. L'insieme delle possibili locazioni traversabili \`e rappresentato mediante un grafo indiretto.  I \emph{tile} sono disposti in maniera adiacente l'uno dall'altro nella griglia. \par Nel progetto proposto ci si \`e serviti di mappe \emph{grid-based} generate in modo casuale a seconda della tipologia desiderata.\par Ogni \emph{tile} traversabile della mappa corrisponde ad un nodo nel grafo corrispondente. Un nodo, che corrisponde ad una locazione traversabile \`e connesso a tutti i nodi associati ai tile adiacenti e traversabili. I pesi degli archi che corrispondono a spostamenti ortogonali hanno costo unitario, gli archi tra due nodi collegati diagonalmente hanno un costo $\sqrt{2}$. \par Per riferirsi a un nodo del grafo partendo dalle sue coordinate sulla grigla e viceversa si usano le usuali formule di conversioni:
+date le coordinate geometriche x e y di una locazione, il nodo corrispondente avra\`a come identificativo \begin{equation} nodo = y*\mbox{MAP\_WIDTH} + x \end{equation} dove \emph{MAP\_WIDTH} si intende la larghezza della mappa. Per riottenere invece le coordinate geometriche di un nodo si utilizzano le seguenti formule: \begin{equation} x = nodo \% \mbox{MAP\_WIDTH} \end{equation} \begin{equation} y = nodo / \mbox{MAP\_WIDTH} \end{equation} 
+Considerando le tipiche mappe dei retro game sono state considerate tre diverse tipologie di generazione che andremo a discutere qui in seugito.
+
+
+
+
+\chapter{Algoritmi di pathfinding}
+\par{Il \emph{path-planning} \`e un componente fondamentale della maggior parte dei videogiochi.
+Gli \emph{agent} spesso si muovono nell'area di gioco. A volte questo movimento \`e predeterminato dagli sviluppatori del gioco, come ad esempio il percorso di pattugliamento di un area che una guardia deve seguire. I percorsi predeterminati sono semplici da implementare, ma per loro natura sono facilmente prevedibili. Agent pi\`u complessi non sanno in anticipo dove dovranno muoversi. Una unit\`a in un gioco di strategia potrebbe ricevere in tempo reale l'ordine dal giocatore di muoversi in qualsiasi punto sulla mappa, oppure, in un gioco \emph{tile-based} pu\`o succedere che un agent debba inseguire il giocatore nell'area di gioco.
+Per ognuna di queste situazioni, l'IA deve essere in grado di computare un percorso adeguato attraverso l'area di gioco per arrivare a destinazione, partendo dalla posizione attuale dell'agent. Inoltre vorremmo che il percorso trovato sia il pi\`u breve possibile.}
+\par{La maggior parte dei giochi usa delle soluzioni di pathfinding basate sull'algoritmo chiamato A*. Nonostante sia molto semplice da implementare ed efficiente, A* non opera in genere sulla geometria della mappa di gioco. Esso richiede che tale mappa sia rappresentata in una particolare struttura dati: un grafo pesato e non-negativo.
+In questo capitolo verranno presentati gli algoritmi realizzati nel progetto, tra cui Dijkstra, A* e diverse sue varianti.}
+
+\section{Dijkstra}
+\label{sec:dijkstra}
+\par{Prima di entrare nel vivo degli algoritmi di pathfinding occorre fare alcune precisazioni su cosa si intende per \emph{problema dei cammini minimi}. Nella  teoria  dei  grafi, per shortest-path si intende il cammino minimo tra due vertici, ossia quel percorso che collega due vertici dati e che minimizza la somma dei costi associati all'attraversamento di ciascun arco. Formalmente, }
+\par{Sia $G = (V, E)$ un un grafo orientato con funzione di costo $\omega: E \rightarrow \mathbb{R}$ che associa ogni arco ad un valore nell'insieme dei reali. Sia $p=\langle v_0, v_1, ..., v_k \rangle$ un cammino che collega il vertice $v_1$ e al vertice $v_k$, allora il costo di $p$ \`e la somma dei pesi degli archi che lo costituiscono: $$\omega^*(p) = \sum \limits_{i=1}^k \omega(v_{i-1}, v_i) $$.
+Dato un cammino $p$ da $v_0$ a $v_k$, $p$ \`e \emph{minimo} sse non esiste un altro cammino $p'$ da $v_0$ a $v_k$ tale che $w^*(p') < w^*(p)$.}
+\par{Esistono dunque due varianti del problema: il problema del \emph{cammino minimo} tra una coppia di vertici, e il \emph{problema dei cammini minimi} da un vertice sorgente verso tutti gli altri vertici raggiungibili dalla sorgente. Chiaramente il primo \`e un sottocaso del secondo. }
+\par{
+L'algoritmo di Dijkstra \`e un algoritmo che risolve il \emph{problema dei cammini minimi} (o Shortest Paths, SP) in un grafo con o senza ordinamento e con pesi non negativi sugli archi.}
+\par{Mentre nei videogiochi usualmente si computa il percorso minimo da un punto di partenza a un punto di arrivo, l'algoritmo di Dijkstra \`e realizzato in modo da trovare il percorso pi\`u breve da un punto di partenza verso tutti i restanti punti raggiungibili.
+La soluzione includer\`a ovviamente anche l'eventuale punto di arrivo, ma ci\`o comporter\`a in ogni caso uno spreco di risorse computazionali se siamo interessati a un solo punto di arrivo.
+Tuttavia pu\`o essere modificato in modo da generare solo il percorso nel quale si \`e interessati, ma sar\`a ancora inefficiente come algoritmo di pathfinding.
+}
+\par{
+Dijkstra \`e un algoritmo iterativo. Ad ogni iterazione, considera un nodo nel grafo ed esamina i suoi archi uscenti (nella prima iterazione considera il nodo di partenza). Ci riferiremo per semplicit\`a al nodo considerato ad ogni iterazione come "nodo corrente".
+Per ogni arco uscente dal nodo corrente, viene esaminato ogni suo nodo terminale $v$ e si memorizza il costo totale del cammino totale percorso fino ad arrivare ad esso (\emph{cost-so-far)} e l'arco dal quale si \`e arrivati ad esso in apposite strutture dati ($dist[v]$ e $prev[v]$ nello pseudocodice). Dopo la prima iterazione, il costo totale del cammino per il nodo terminale di ogni connessione del nodo corrente, \`e uguale alla somma del costo totale del nodo corrente e del peso della connessione verso il nodo terminale.
+}
+\par{
+L'algoritmo tiene traccia dei nodi da visitare in una coda di priorit\`a. La priorit\`a viene stabilita sulla base del costo totale del cammino associato a quel nodo. Nella prima iterazione la coda conterr\`a solo il nodo di partenza con costo totale uguale a 0. Nelle successive iterazioni l'algoritmo estrae dalla coda il nodo con il minor costo totale. Questo sar\`a processato come \emph{nodo corrente}.
+}
+\par{
+Ogni volta che viene esaminato un nodo terminale, l'algoritmo confronta il suo costo totale attuale (all'inizio tutti i nodi vengono inizializzati, assegnandoli un valore di costo di default pari a \emph{infinito}) con quello appena calcolato. Se il costo totale appena calcolato \`e minore di quello precedentemente assegnato a quel nodo terminale, tale valore viene aggiornato. Ovviamente oltre al valore di costo totale viene aggiornato anche il suo predecessore, che diventer\`a l'arco che connette il nodo corrente a quello terminale in esame. Quando si verifica questa condizione significa che l'algoritmo ha trovato un percorso migliore verso quel nodo terminale.
+}
+\par{
+L'implementazione canonica di Dijkstra termina quando la coda \`e vuota, ossia, quando tutti i nodi appartenenti al grafo sono stati visitati e processati. Tuttavia per risolvere un problema di pathfinding, l'algoritmo pu\`o terminare prima che tutti i nodi vengano processati, ossia, quando il nodo di arrivo \`e il nodo con la priorit\`a pi\`u bassa nella in coda.
+}
+\par{
+Una volta raggiunto il nodo di arrivo, viene estratto il cammino percorrendo a ritroso tutte le connessioni usate per arrivare a quel nodo fino a raggiungere il nodo di partenza.
+}
+
+\begin{algorithm}
+\PrintSemicolon
+\caption{Dijkstra Shortest Path}
+  \LinesNumbered
+%This is to hide Begin keyword
+ \Fn{DijkstraShortestPath(G, s)}{
+ 	\tcc{array per tenere traccia del costo totale del percorso fino a quel nodo}
+ 	$dist[source] \longleftarrow 0 $\; 
+ 	\tcc{coda di priorit\`a}
+ 	 $Q \longleftarrow \emptyset$\;
+ 	\ForEach{$v \in Graph.\textbf{vertexSet}()$ }{
+		\If{v $\neq$ source}{
+		 	 $dist[v] \longleftarrow \infty$\;
+		 	 $prev[v] \longleftarrow \emptyset$\;
+		}
+		$Q.\textbf{add}(v, dist[v])$\;
+ 	}
+	\While{!Q.\textbf{isEmpty}()}{
+		$u \longleftarrow Q.\textbf{extractMin}()$\;
+		\ForEach{neighbor v of u}{
+			$alt \longleftarrow dist[u] + \textbf{lenght}(u,v)$\;
+			\If{alt \textless dist[v]}{
+					 	 $dist[v] \longleftarrow alt$\;
+					 	 $prev[v] \longleftarrow u$\;
+					 	 $Q.\textbf{updatePriority}(v,alt)$\;
+			}
+		}
+	}
+ } 
+\end{algorithm}
+
+
+\par{
+Tenendo presente che la coda di priorit\`a \`e implementata come uno \emph{heap di Fibonacci} e che la complessit\`a delle operazioni di \textbf{extractMin}() e \textbf{updatePriority}() sono rispettivamente $\mathcal{O}(log(n))$ e $\Theta(1)$, la complessit\`a dell'algoritmo nel caso peggiore \`e di $\mathcal{O}(|E| + |V| \log|V|)$.
+}
+\section{A*}
+\label{sec:astar}
+La maggior parte dei sistemi di \emph{pathfinding} odierni sono basati su questo algoritmo, data la sua efficienza, semplicit\`a di implementazione e ampi margini di ottimizzazione.
+Diversamente dall'algoritmo di Dijkstra, A* \`e pensato per la ricerca del percorso minimo \emph{point-to-point}.
+\par{
+Il funzionamento dell'algoritmo \`e molto simile a quello di Dijkstra. A differenza di quest'ultimo, che sceglie sempre prima il nodo con il minor \emph{cost-so-far}, A* sceglier\`a il nodo candidato che \emph{pi\`u probabilmente} porter\`a al percorso pi\`u breve. Per far ci\`o, A* utilizza delle funzioni \emph{euristiche}. Maggiore sar\`a l'accuratezza della funzione euristica utilizzata, tanto pi\`u l'algoritmo sar\`a efficiente.
+}
+\par{
+A* funziona iterativamente: in ogni iterazione considera un nodo del grafo ed esamina i suoi archi uscenti. Il nodo corrente viene scelto usando un criterio di selezione simile a quello di Dijkstra, ma con la significativa differenza dell'euristica.
+}
+\par{
+Come Dijkstra, per ogni arco uscente dal nodo corrente, A* esamina il suo nodo terminale $x$ e memorizza il costo totale del cammino percorso fino ad arrivare ad uno di essi (\emph{cost-so-far)} e l'arco dal quale si \`e arrivati. Inoltre A* memorizza un valore in pi\`u, ovvero, una stima del costo totale $f(x)$ del percorso dal nodo di partenza al nodo di arrivo attraverso $x$. Questa stima \`e data dalla somma di due valori: il costo totale \emph{reale} dal nodo sorgente fino al nodo $x$ (\emph{cost-so-far} al quale ci riferiremo come \emph{g(x)}) e la distanza (euristica) dal nodo $x$ fino al nodo di arrivo a cui ci riferiremo come \emph{h(x)}.
+}
+\par{
+Pertanto \emph{f(x) = g(x) + h(x)}. Come vedremo, \emph{f(x)} fornisce la chiave dell'ordinamento della coda di priorit\`a dell'algoritmo}.
+
+\par{
+A* tiene traccia dei nodi scoperti ma ancora da processare in una coda, a cui ci riferiremo come \emph{Open}, e dei nodi gi\`a processati in una lista \emph{Closed}. I nodi saranno inseriti nella coda \emph{Open} appena saranno scoperti lungo gli archi uscenti dal nodo corrente. Essi verranno successivamente trasferiti nella lista \emph{Closed} una volta che diventeranno essi stessi nodo corrente.
+}
+\par{Diversamente da Dijkstra, viene estratto dalla coda \emph{Open} il nodo con il minor valore \emph{f(x)}. In tal modo si processeranno per primi i nodi pi\`u promettenti.}
+\par{Potrebbe accadere che si arrivi ad esaminare un nodo appartenente alla coda \emph{Open} o alla lista \emph{Closed} e si debbano modificare i suoi valori di costo. In questo caso ricalcoleremo il valore di \emph{g(x)} come al solito e se esso \`e minore di quello gi\`a memorizzato, allora verr\`a aggiornato.}
+\par{Diversamente da Dijkstra, A* pu\`o trovare cammini migliori per nodi che sono gi\`a stati processati, e che quindi si trovano nella lista \emph{Closed}. In particolare, nel caso in cui durante una ricerca si incontra un nodo $x$ appartenente alla lista \emph{Closed} si valuta se il valore \emph{g(x)} \`e maggiore del costo del percorso appena scoperto vuol dire che abbiamo scoperto un percorso migliore, e dovremmo aggiornare il predecessore di $x$ e il valore \emph{g(x)}. Tuttavia quando un nodo viene messo nella lista \emph{Closed}, vuol dire che tutti i suoi archi uscenti sono stati processati. Pertanto aggiornare i valori del nodo $x$ non sar\`a sufficiente, giacch\`e la modifica deve essere propagata lungo tutte le sue connessioni uscenti.}
+\par{Esiste un approccio molto semplice per ricalcolare e propagare i valori aggiornati di un nodo appartenente alla lista \emph{Closed}, ossia estrarlo dalla lista \emph{Closed} e inserirlo nuovamente nella coda \emph{Open} con i suoi valori aggiornati. Esso stazioner\`a nella coda finch\`e non verr\`a estratto e processato nuovamente. In tal modo le sue connessioni potranno a loro volta aggiornate nuovamente.}
+\par{In molte implementazioni dell'algoritmo, A* viene fatto terminare quando il nodo di arrivo \`e il nodo con la minima priorit\`a nella coda \emph{Open}. Tuttavia come abbiamo visto, un nodo con il minor costo potrebbe essere rivisitato in un secondo momento. Non possiamo pi\`u garantire pertanto che il nodo minimo nella coda \emph{Open} sia quello che porti ad un cammino minimo. Di qui, la maggior parte delle implementazioni di A* possono produrre risultati non ottimali.}
+\par{Altre implementazioni terminano non appena il nodo di arrivo viene visitato non aspettando che esso diventi il pi\`u piccolo nodo nella coda \emph{Open}. In ogni caso si ammette che il risultato finale potrebbe essere non ottimale, pertanto sar\`a a discrezione dello sviluppatore scegliere quale approccio di terminazione adottare.}
+
+\begin{algorithm}
+\PrintSemicolon
+\caption{A* Shortest Path}
+  \LinesNumbered
+%This is to hide Begin keyword
+ \Fn{AStarShortestPath(Graph, source, target)}{
+	$\textbf{g}(source) \longleftarrow 0$\;
+	$\textbf{parent}(source) \longleftarrow source$\;
+ 	 $Open \longleftarrow \emptyset$\;
+ 	 $Closed \longleftarrow \emptyset$\;
+ 	 $Open.\textbf{Insert}(source, \textbf{g}(source) + \textbf{h}(source))$\;
+
+	\While{!Open.\textbf{isEmpty}()}{
+		$u \longleftarrow Open.\textbf{extractMin}()$\;
+		\If{$u = target$}{\Return{"path found}"}
+		$Closed.\textbf{add}(u)$\;
+		\ForEach{neighbor v of u}{
+			\If{$v \notin Closed$}{
+				\If{$v \notin Open$}{
+					$\textbf{g}(v) \longleftarrow \infty$\;
+					$\textbf{parent}(v) \longleftarrow \emptyset$\;
+				}
+				$\textbf{UpdateVertex}(u, v)$\;
+			}
+		}
+	}\Return{"no path found"}
+ }
+ \Fn{UpdateVertex(u, v)}{
+	$g_{old} \longleftarrow g(v)$\;
+ 	$\textbf{ComputeCost}(u, v)$\;
+ 	\If{$g(v) \textless g_{old}$}{
+ 	\If{$v \in Open$}{
+ 		$Open.\textbf{Remove}(v)$\;
+ 	}
+ 	$Open.\textbf{Insert}(v, \textbf{g}(v) + \textbf{h}(v))$\;
+ 	}
+ } 
+ \Fn{ComputeCost(u, v)}{
+ \If{$\textbf{g}(u) + \textbf{c}(u, v) $\textless$ \textbf{g}(v) $}{
+ 	$\textbf{g}(v) \longleftarrow \textbf{g}(u) + \textbf{c}(u, v)$\;
+ 	$\textbf{parent}(v) \longleftarrow u$\;}
+ }
+\end{algorithm}
+
+\par{Esattamente come per Dijkstra, si recupera il cammino compiuto percorrendo ricorsivamente tutte le connessioni accumulate dal nodo di arrivo fino a quello di partenza.}
+\par{Generalmente la parte euristica dell'algoritmo viene implementata come una funzione.
+Di seguito riporteremo alcune delle pi\`u comuni funzioni euristiche.
+ Siano $u$ e $v$ due nodi con coordinate rispettivamente di $(x_1, y_1)$ e $(x_2, y_2)$ }
+\begin{itemize}
+\item Manhattan distance: $H(u,v) = |x_1 - x_2| + |y_1 - y_2|$
+\item Euclidean distance: $H(u,v) = \sqrt{(x_1 - x_2)^2 + (y_1 - y_2)^2}$
+\item Chebyshev distance: $H(u,v) = max\{|x_1 - x_2|, |y_1 - y_2|\} $
+\item Octile distance : $H(u,v) = \sqrt{2} *× min\{|x_1 - x_2 |, |y_1 - y_2 |\} + ||x_1 - x_2 | - |y_1 - y_2 || $
+\end{itemize}
+\iffalse
+\lstdefinestyle{customjava}{
+  belowcaptionskip=1\baselineskip,
+  breaklines=true,
+  frame=L,
+  xleftmargin=\parindent,
+  language=java,
+  showstringspaces=false,
+  basicstyle=\footnotesize\ttfamily,
+  keywordstyle=\bfseries\color{black},
+  commentstyle=\itshape\color{black},
+  identifierstyle=\color{blue},
+  stringstyle=\color{orange},
+}
+\lstset{style=customjava, label=lstEuclide caption=euclidean distance}
+\begin{lstlisting}
+private class EuclideanDistance implements AStarAdmissibleHeuristic<Integer>{
+
+    @Override
+    public double getCostEstimate(Integer sourceVertex, Integer targetVertex) {
+        int sourceX, sourceY, targetX, targetY;
+        sourceX=sourceVertex%GameMap.WIDTH;
+        sourceY=sourceVertex/GameMap.WIDTH;
+        targetX=targetVertex%GameMap.WIDTH;
+        targetY=targetVertex/GameMap.WIDTH;
+        return Math.sqrt(Math.pow(sourceX - targetX,2)
+                        +Math.pow(sourceY - targetY,2));
+    }
+}
+\end{lstlisting}
+\lstset{style=customjava,label=lstManhattan, caption=Manhattan distance}
+\begin{lstlisting}
+private class ManhattanDistance implements AStarAdmissibleHeuristic<Integer> {
+
+    @Override
+    public double getCostEstimate(Integer sourceVertex, Integer targetVertex) {
+        int sourceX, sourceY, targetX, targetY;
+        sourceX=sourceVertex%GameMap.WIDTH;
+        sourceY=sourceVertex/GameMap.WIDTH;
+        targetX=targetVertex%GameMap.WIDTH;
+        targetY=targetVertex/GameMap.WIDTH;
+        return Math.abs(sourceX - targetX)
+              +Math.abs(sourceY - targetY);
+    }
+}
+\end{lstlisting}
+\lstset{style=customjava, label=lstOctile, caption=octile distance}
+\begin{lstlisting}
+private class OctileDistance implements AStarAdmissibleHeuristic<Integer> {
+	private static final double SQRT2 = Math.sqrt(2);
+	
+    @Override
+    public double getCostEstimate(Integer sourceVertex, Integer targetVertex) {
+        int sourceX, sourceY, targetX, targetY, dx, dy;
+        sourceX=sourceVertex%GameMap.WIDTH;
+        sourceY=sourceVertex/GameMap.WIDTH;
+        targetX=targetVertex%GameMap.WIDTH;
+        targetY=targetVertex/GameMap.WIDTH;
+        dx=Math.abs(sourceX - targetX);
+        dy=Math.abs(sourceY - targetY)
+        return Math.abs(dx - dy) 
+        + SQRT2*Math.min(dx, dy);
+    }
+}
+\end{lstlisting}
+\fi
+\par{Se la griglia permette movimenti in quattro direzioni (4-neighborhood), allora \`e opportuno scegliere la distanza di Manhattan, altrimenti se permette movimenti in otto direzioni (8-neighborhood), la \emph{octile distance} \`e preferibile. Quest'ultima pu\`o essere considerata come una variante della distanza di Chebyshev, tenendo conto che il costo di uno spostamento diagonale \`e uguale a $\sqrt{2}$. Tutte le funzioni euristiche proposte sono consistenti. Da notare che una funzione euristica h() si definisce consistente (o monotona) sse per ogni nodo n del grafo e ogni successore $n'$ di $n$, il costo stimato \emph{h(n)} per raggiungere l'obiettivo \`e uguale, o inferiore, al peso dell'arco da $n$ a $n'$ sommato al costo stimato \emph{h($n'$)}. Formalmente, dato un grafo $G = (V, E)$ e una funzione euristica \emph{h()}, allora \emph{h()} si dir\`a consistente solo se per ogni nodo $n \in V$ e ogni successore $n'$ di $n$ vale la seguente condizione: $$ h(n) \leq h(n') + c(n, n') $$
+Quindi h() \`e consistente nel caso in cui soddisfa dal punto di vista geometrico la propriet\`a della \emph{diseguaglianza triangolare}, la quale afferma che in un triangolo ogni singolo lato non pu\`o essere superiore alla somma degli altri due.}
+\begin{figure}[htp]
+\centering
+\includegraphics[scale=0.45]{/home/notsaved/disug_triang.png}
+\caption{diseguaglianza triangolare }
+\label{img4}
+\end{figure}
+\par{Una funzione euristica si dice ammissibile sse non sopravvaluta mai il costo minimo effettivo verso il nodo di arrivo. Una funzione euristica \emph{consistente} \`e sempre anche \emph{ammissibile} (non \`e sempre vero il contrario). Formalmente, $h()$ si definisce ammissibile sse $ h(v) \leq h^*(v)$, dove $h^*()$ \`e una funzione euristica ideale che restituisce sempre il costo esatto del percorso ottimo per raggiungere il nodo di arrivo. }
+
+\section{Theta*}
+
+\label{sec:theta}
+
+\par{Uno dei problemi centrali che concernono le Intelligenze Artificiali nei videogiochi \`e trovare percorsi minimi e allo stesso tempo che sembrino realistici. Il \emph{path-planning} si divide generalmente i due parti: (\emph{i}) discretizzazione, ossia, semplificare un ambiente continuo in forma di grafo e (\emph{ii}) ricerca, attraverso la quale si vengono propagate le informazioni lungo il grafo per trovare un percorso da una locazione di partenza a un punto di arrivo. Per quanto riguarda la discretizzazione, \`e importante notare che esistono diversi approcci oltre alle regolari griglie bidimensionali, come ad esempio le mesh di navigazione (\emph{nav-mesh}), grafi di visibilit\`a e  \emph{waypoints}.}
+
+\begin{figure}[htp]
+\centering
+\includegraphics[scale=0.50]{../../aap-pathcompare2D.png}
+\caption{Square Grid: A* vs. Theta* }
+\label{img5}
+\end{figure}
+
+\begin{figure}[htp]
+\centering
+\includegraphics[scale=0.50]{../../aap-navmesh.png}
+\caption{Navmesh: A* vs Theta*}
+\label{img6}
+\end{figure}
+
+\par{In ogni caso A* \`e quasi sempre il metodo di ricerca scelto a causa della sua semplicit\`a e delle sue garanzie di trovare un percorso ottimo. Il problema con A* \`e che il percorso migliore sul grafo spesso non \`e equivalente al percorso migliore in un ambiente continuo. A* propaga le informazioni strettamente attraverso le connessioni del grafo e vincola i percorsi ad essere composti da tali connessioni. Nelle figure \ref{img5} e \ref{img6}, un ambiente continuo \`e stato discretizzato rispettivamente in una griglia quadrata e in una navmesh. Il percorso minimo, sia nella griglia che nella mesh di navigazione (Figure \ref{img5} e \ref{img6}, sinistra) \`e molto pi\`u lunga e non-realistica rispetto al percorso minimo nell'ambiente continuo (Figure \ref{img4} e \ref{img5}, destra)}
+
+
+
+\par{
+La soluzione tipica a questo problema \`e di applicare una funzione di \emph{path-smoothing} sui percorsi trovati dall'algoritmo. Tuttavia scegliere una buona tecnica di path-smoothing che ritorni un percorso che sembri realistico efficientemente pu\`o presentare alcune difficolt\`a. Uno dei principali motivi \`e che una ricerca di A* (con alcuni tipi di euristiche), garantisce di trovare solo una dei diversi cammini minimi, alcuni dei quali possono essere raffinati dalla funzione di \emph{path-smothing} in modo pi\`u efficiente di altri. Ad esempio A* usato con un tipo di euristica \emph{octile} \`e molto efficace sulle griglie che permettono movimenti diagonali, ma allo stesso tempo calcola percorsi non-realistici e molto difficili da raffinare perch\`e tutti i movimenti diagonali appaiono prima di tutti i movimenti lineari che compongono il percorso, come mostrato nella figura \ref{img7} dalla linea rossa discontinua.
+\begin{figure}[htp]
+\centering
+\includegraphics[scale=0.30]{../../aap-PostProcessing.png}
+\caption{Percorso trovato da A* con differenti tecniche di path-smothing}
+\label{img7}
+\end{figure}
+}
+
+
+\par{
+L'algoritmo Theta* risolve queste problematiche. Essendo una variante di A*, similmente propaga le informazioni lungo gli archi del grafo ma senza vincolare i percorsi trovati ad essi (i percorsi con questa caratteristica soo detti "\emph{any-angle}"). 
+Similmente ad A*, Theta* \`e di facile implementazione ed efficiente (ha un runtime simile ad A*) ed inoltre calcola percorsi pi\`u "realistici", senza il bisogno di alcun processo postumo di \emph{path-smoothing.} 
+}
+\par{
+Theta* combina due importanti propriet\`a che concernono il \emph{path-planning}: 
+
+
+\begin{itemize}
+\item \textbf{Grafi di Visibilit\`a}: contengono il nodo di partenza, il nodo di arrivo, e gli spigoli di tutte le celle bloccate. Un nodo \`e connesso in linea retta ad un altro nodo se e solo se sono in linea di visibilit\`a (\emph{line-of-sight}) l'uno con l'altro, ossia, se non c'\`e alcuna cella bloccata lungo la linea retta che congiunge i due nodi. I cammini minimi sui grafi di visibilit\`a sono tali anche in un ambiente continuo, ma purtroppo il \emph{path-finding} su di essi \`e inefficiente perch\`e il numero di archi pu\`o essere quadratico rispetto il numero di celle.
+\item \textbf{Griglie}: il \emph{path-finding} su di esse \`e pi\`u veloce rispetto i grafi di visibilit\`a perch\`e il numero di archi \`e lineare sul numero di celle. Tuttavia i percorsi basate sugli archi delle griglie possono essere non-ottimali e dall'aspetto non-realistico.
+\end{itemize}}
+
+\begin{algorithm}
+\PrintSemicolon
+\caption{Theta* Shortest Path}
+  \LinesNumbered
+%This is to hide Begin keyword
+\setcounter{AlgoLine}{32}
+ \Fn{ComputeCost(u, v)}{
+ \If{$\textbf{LineOfSight}(\textbf{parent}(u), v)$}{ \label{if2}
+ 	\If{$\textbf{g}(\textbf{parent}(u)) + \textbf{c}(\textbf{parent}(u), v) \textless \textbf{g}(v)$}{
+ 	$parent(v) \longleftarrow parent(u)$\;
+ 	$g(v) \longleftarrow \textbf{g}(\textbf{parent}(u)) + \textbf{c}(\textbf{parent}(u), v)$
+ 	;
+ 	}
+ }
+ \Else{
+ \If{$\textbf{g}(u) + \textbf{c}(u, v) $\textless$ \textbf{g}(v) $}{ \label{if1}
+ 	$\textbf{g}(v) \longleftarrow \textbf{g}(u) + \textbf{c}(u, v)$\;
+ 	$\textbf{parent}(v) \longleftarrow u$\;}
+ 	}
+ }
+\end{algorithm}
+
+\par{
+La differenza principale tra Theta* e  A* \`e che Theta* permette che il predecessore di un nodo sia un qualsiasi nodo, diversamente da A* che vincola il predecessore ad essere strettamente un nodo adiacente. La procedura principale e \emph{UpdateVertex}() sono del tutto simili ad A*, pertanto sono state omesse. Theta* \`e del tutto identico ad A* salvo per la procedure \emph{ComputeCost}(), che aggiorna il valore \emph{g}() e il predecessore \emph{parent}() di un nodo non ancora espanso seguendo due possibili path:
+\begin{itemize}
+\item \textbf{Path 1}: per permettere percorsi \emph{any-angle}, Theta* considera il percorso dal nodo di partenza al predecessore del nodo \emph{u} (\emph{parent(u)} [ \emph{= g(parent(u))}] e dal predecessore del nodo \emph{u} al nodo \emph{v} in linea retta [ \emph{= c(parent(u), v)}] se e solo se i nodi \emph{v} e \emph{parent(u)} sono in linea di visibilit\`a (Linea \ref{if2}). Il principio che c'\`e dietro questa considerazione \`e che il Path 1 non \`e pi\`u lungo del Path 2 per la \textbf{disuguaglianza triangolare} se il nodo \emph{v} \`e in linea di visibilit\`a con \emph{parent(u)}.
+\item \textbf{Path 2}: come visto in A*, Theta* considera il percorso dal nodo di partenza al nodo \emph{u} [= \emph{g(u)}] e dal nodo \emph{u} in linea retta [ \emph{= c(u,v)}] ad un nodo adiacente \emph{v}, risultante in un percorso di lunghezza g(u) + c(u,v) (Linea \ref{if1})
+\begin{algorithm}
+\PrintSemicolon
+\caption{Line of Sight pt. 1}
+  \LinesNumbered
+%This is to hide Begin keyword
+
+\Fn{LineOfSight(u, v)}{
+
+$x_1 \leftarrow u.getX()$\;
+$y_1 \leftarrow u.getY()$\;
+$x_2 \leftarrow v.getX()$\;
+$y_2 \leftarrow v.getY()$\;
+
+$dx \leftarrow x_2 - x_1$\;
+$dy \leftarrow y_2 - y_1$\;
+$f \leftarrow 0$\;
+
+$signX \leftarrow 1$\;
+$signY \leftarrow 1$\;
+$x_{offset} \leftarrow 0$\;
+$y_{offset} \leftarrow 0$\;
+
+
+\If{$dy < 0$}{
+$dy \leftarrow (-1)*dy$\;
+$signY \leftarrow -1$\;
+$y_{offset} \leftarrow -1$\;
+}
+
+\If{$dx < 0$}{
+$dx \leftarrow (-1)*dx$\;
+$signX \leftarrow -1$\;
+$x_{offset} \leftarrow -1$\;
+}
+
+\If{$dx >= dy$}{
+	\While{$x_1 \neq x_2$}{
+		$f \leftarrow f + dy$\;
+		\If{$f \geq dx$}{
+			\If{$blocked(x_1 + x_{offset}$, $y_1 + y_{offset})$}{
+				\Return{false}
+			}		
+			$y_1 \leftarrow y_1 + signY$\;
+			$f \leftarrow f - dx$\;
+		}
+		\If{$f \neq 0$ $\land$ $blocked(x_1 + x_{offset}$, $y_1 + y_{offset})$}{
+			\Return{false}
+		}
+		
+		\If{$dy = 0$ $\land$ $blocked(x_1 + x_{offset}$, $y_1)$ $\land$ $blocked(x_1 + x_{offset}$, $y_1 - 1)$}{
+			\Return{false}
+		}
+		$x_1 \leftarrow x_1 + signX$\;
+		
+		
+	}
+}
+}
+
+\end{algorithm}
+
+\begin{algorithm}
+\PrintSemicolon
+\SetKwBlock{Begin}{}{end}
+\caption{Line of Sight pt.2}
+  \LinesNumbered
+  \setcounter{AlgoLine}{41}
+\Begin{
+  \Else{
+	\While{$y_1 \neq y_2$}{
+		$f \leftarrow f + dx$\;
+		\If{$f \geq dy$}{
+			\If{$blocked(x_1 + x_{offset}$, $y_1 + y_{offset})$}{
+				\Return{false}
+			}		
+			$x_1 \leftarrow x_1 + signx$\;
+			$f \leftarrow f - dy$\;
+		}
+		\If{$f \neq 0$ $\land$ $blocked(x_1 + x_{offset}$, $y_1 + y_{offset})$}{
+			\Return{false}
+		}
+		
+		\If{$dy = 0$ $\land$ $blocked(x_1$, $y_1 + y_{offset})$ $\land$ $blocked(x_1 - 1$, $y_1 + y_{offset})$}{
+			\Return{false}
+		}
+		$y_1 \leftarrow x_1 + signY$\;
+		
+		
+	}
+	}
+	\Return{true}
+	}
+ \end{algorithm}
+\end{itemize}
+}
+\par{I controlli della linee di visibilit\`a possono essere effettuati in modo efficiente con operazioni aritmetiche di soli interi su griglie quadrate. L'algoritmo usato esegue questi controlli con un metodo standard di \emph{line-drawing} molto comune nelle applicazioni di \emph{computer grafica}.}
+\iffalse
+
+\lstdefinestyle{customjava}{
+  belowcaptionskip=1\baselineskip,
+  breaklines=true,
+  frame=L,
+  xleftmargin=\parindent,
+  language=java,
+  showstringspaces=false,
+  basicstyle=\footnotesize\ttfamily,
+  keywordstyle=\bfseries\color{black},
+  commentstyle=\itshape\color{black},
+  identifierstyle=\color{blue},
+  stringstyle=\color{orange},
+}
+\lstset{style=customjava, caption=Funzione Line Of Sight}
+\begin{lstlisting}
+public static boolean lineOfSight(int x1, int y1, int x2, int y2) {
+    int dy = y2 - y1;
+    int dx = x2 - x1;
+    int f = 0;
+
+    int signY = 1;
+    int signX = 1;
+    int offsetX = 0;
+    int offsetY = 0;
+
+    if (dy < 0) {
+        dy *= -1;
+        signY = -1;
+        offsetY = -1;
+    }
+    if (dx < 0) {
+        dx *= -1;
+        signX = -1;
+        offsetX = -1;
+    }
+
+    if (dx >= dy) {
+        while (x1 != x2) {
+            f += dy;
+            if (f >= dx) {
+                if (blocked(x1 + offsetX, y1 + offsetY))
+                    return false;
+                y1 += signY;
+                f -= dx;
+            }
+            if (f!=0 && blocked(x1 + offsetX, y1 + offsetY))
+                return false;
+            
+            
+            if (dy == 0 && blocked(x1 + offsetX, y1) 
+                        && blocked(x1 + offsetX, y1 - 1))
+                return false;
+
+            x1 += signX;
+        }
+    }else{
+        while (y1 != y2) {
+            f += dx;
+            if (f >= dy) {
+                if (blocked(x1 + offsetX, y1 + offsetY))
+                    return false;
+                x1 += signX;
+                f -= dy;
+            }
+            if (f!=0 && blocked(x1 + offsetX, y1 + offsetY))
+                return false;
+            if (dx == 0 && blocked(x1, y1 + offsetY) 
+                        && blocked(x1 - 1, y1 + offsetY))
+                return false;
+
+            y1 += signY;
+        }
+    }
+    return true;
+}
+\end{lstlisting}
+\fi
+
+
+
+\section{Bidirectional A*}
+\label{sec:bidirectional}
+\par{L'algoritmo A*, applicato in modo unidirezionale, pu\`o effettuare una ricerca in due possibili direzioni opposte:
+\begin{itemize}
+\item \textbf{Forward}: A* effettua una ricerca dall'agent al target assegnando i loro nodi attuali rispettivamente al nodo di partenza e al nodo di arrivo. Ci si riferisce a questo approccio come \textbf{Forward A*}.
+\item \textbf{Backward}: A* effettua una ricerca dal target all'agent assegnando i loro nodi attuali rispettivamente al nodo di partenza e al nodo di arrivo. Ci si riferisce a questo approccio come \textbf{Backward A*.}
+\end{itemize}}
+\par{
+L'idea del \emph{bidirectional search} pu\`o dimezzare il tempo di ricerca di un algoritmo effettuando una ricerca in \emph{forward} e una in \emph{backward} simultaneamente. Quando le due frontiere di ricerca si intersecano, l'algoritmo pu\`o ricostruire il percorso seguito che va dal nodo di partenza, passando per il "nodo frontiera", al nodo di arrivo. Tuttavia per garantire miglioramenti sostanziali della ricerca occorre che le due ricerche opposte si incontrino a met\`a strada.}
+\par{Per dare l'idea generale dell'algoritmo proposto lo scomporremo nel seguente set di passi. Siano \emph{$Open_{f}$} e \emph{$Open_{b}$} rispettivamente le code di priorit\`a delle due ricerche in \emph{forward} e \emph{backward} e \emph{$Closed_f$} e \emph{$Closed_b$} i loro set \emph{Closed}, ed inoltre, sia $\alpha_{min}$ la lunghezza del percorso minimo dal nodo di partenza al nodo di arrivo (inizialmente inizializzato ad infinito):
+
+\begin{enumerate}
+\item Inizializza i nodi di \emph{start} e di \emph{goal}. Inserisci il nodo start e il nodo goal rispettivamente in \emph{$Open_f$} e in \emph{$Open_b$}.
+\item Decidi se effettuare una ricerca in forward (vai a step 3) o in backward (vai a step 4)
+\item Espandi il fronte \emph{forward} con \emph{Forward-A*} e vai allo step 5.
+\item Espandi il fronte \emph{backward} con \emph{Backward-A*} e vai allo step 5.
+\item se si \`e scoperto un nodo $n$ tale che $n \in Closed_f \cap Closed_b$, verr\`a eseguito il seguente assegnamento:  $\alpha_{min} = min(\alpha_{min}, g_{f}(n) + g_{b}(n))$. Qui, se $\alpha_{min} \leq max(f_{f_{min}}, f_{b_{min}})$ allora l'algoritmo termina e il percorso con lunghezza $\alpha_{min}$ sar\`a restituito. 
+Altrimenti torna allo step 2.
+\end{enumerate}
+
+}
+\par{
+I punti critici di questo algoritmo si possono riassumere in (i) scelta tra le due ricerche e (ii) terminazione, di cui abbiamo gi\`a parlato nel passo 5.
+Per quanto riguarda invece il primo punto, si intende il criterio di scelta tra ricerca in \emph{forward} o in \emph{backward}. \`E importante notare che la strategia di scelta tra le due ricerche non influisce sulla correttezza dell'algoritmo quanto piuttosto sull'efficienza. Alcuni esempi di strategia di scelta possono essere: \begin{itemize}
+\item alternare una ricerca in \emph{forward} e una in \emph{backward} per ogni iterazione (procedura di Dantzig).
+\item siano $f_{f_{min}}$ e $f_{b_{min}}$ i valori f minimi nelle code $Open_{f}$ e $Open_{b}$, se $f_{f_{min}}$ \textless $f_{b_{min}}$ allora espandi la frontiera in \emph{forward}, altrimenti espandi la frontiera in \emph{backward} (approccio di \emph{Nicholson}).
+\item se $|Open_{f}|$ \textless $|Open_{b}|$ allora espandi la frontiera in \emph{forward}, altrimenti espandi la frontiera in \emph{backward} (approccio \emph{cardinality comparsion}).
+\end{itemize}
+}
+\par{L'ultima di queste strategie \`e stata riconosciuta in uno studio pubblicato nel 1969 come la pi\`u ragionevole\footnote{Bi-directional and heuristic search in path problems, Ira Pohl, STANFORD LINEAR ACCELERATOR CENTER Stanford University Stanford, California, 94305} poich\`e la cardinalit\`a dei set \emph{Open} riflettono un indice di densit\`a delle frontiere \emph{forward} e \emph{backward} e pertanto ci si \`e attenuti a questa nell'implementazione.}
+
+
+\section{Adaptive A*}
+\label{sec:adaptive}
+
+\par{Nel contesto di un videgioco, gli \emph{agent} devono spesso risolvere dei problemi di ricerca simili tra loro. \emph{Adaptive A*} \`e un recente algoritmo in grado di risolvere una serie di problemi di ricerca di natura simile tra loro pi\`u velocemente di A* perch\`e in grado di aggiornare i valori \emph{h} utilizzando informazioni raccolte in ricerche precedenti. Questo algoritmo rende i valori \emph{h()} consistenti in valori \emph{h()} pi\`u accurati, conservando la loro consistenza. Ci\`o permette di calcolare percorsi minimi in un ambiente dove il costo di uno spostamento pu\`o essere incrementato visto che valori \emph{h} consistenti rimangono tali dopo un incremento di costo. Tuttavia non \`e garantito che trovi il percorso minimo nel caso in cui ci si trovi in un ambiente dove il costo di uno spostamento (ossia, il peso di un arco) pu\`o diminuire, perch\`e i valori euristici consistenti non necessariamente rimangono tali dopo un decremento di costo. Pertanto i valori \emph{h} devono essere aggiornati dopo un decremento di costo. Inoltre fino ad adesso si \`e considerato il problema della ricerca del percorso minimo dando per scontato che il target sia stazionario. Tuttavia ci\`o non \`e sempre vero in un contesto di videogiochi, dove spesso il target \`e a sua volta un \emph{agent} e pu\`o dunque muoversi verso un altro target. Al fine di risolvere queste problematica, si \`e preferito implementare una versione di Adaptive A* che preveda che il target non sia stazionario: \emph{Lazy Moving Target Adaptive A*} (\emph{LMTAA}*\footnote{Incremental Search-Based Path Planning for Moving Target Search, Xiaoxun Sun}).}
+
+\par{Adaptive A* \`e un algoritmo  di ricerca \emph{incrementale}, dove per incrementale si intende appunto la caratteristica di riusare informazioni raccolte durante le precedenti ricerche. Quando queste informazioni sono appunto i valori euristici calcolati dalle precedenti ricerche, allora si pu\`o definire l'algoritmo in questione come \emph{heuristic learning incremental search}. Tuttavia AA* non pu\`o essere applicato in situazioni dove il target di ricerca pu\`o spostarsi. Questo perch\`e i valori euristici calcolati in ricerche precedenti allo spostamento del target risulterebbero incoerenti con la sua nuova posizione e si violerebbe la propriet\`a della \emph{disuguaglianza triangolare}, che \`e una condizione necessaria affinch\`e una funzione euristica sia \emph{consistente}.}
+\par{Come gi\`a detto, \emph{Lazy Moving Target Adaptive A*} \`e una estensione di \emph{AA}* che risolve la problematica del target non stazionario, mantenendo consistenti i valori euristici durante le sue ricerche. Tuttavia, n\`e \emph{AA}* n\`e \emph{MTAA}* garantiscono di conservare la consistenza dei valori euristici \emph{h} in caso di un decremento del costo di uno spostamento.}
+
+\begin{algorithm}
+\PrintSemicolon
+\caption{Lazy Moving Target Adaptive A*}
+  \LinesNumbered
+%This is to hide Begin keyword
+
+\Fn{CalculateKey(s)}{
+\Return{g(s) + h(s)\;}
+}
+\Fn{InitializeState(s)}{
+\If{search(s) = 0}{
+$g(s) \longleftarrow \infty$\;
+$h(s) \longleftarrow H(s,s_{goal})$\;\label{alg:aa4}
+}\ElseIf{$search(s) \neq counter$}{
+\If{$g(s) + h(s) < pathcost(search(s))$}{ \label{alg:aa5}
+$h(s) \longleftarrow pathcost(search(s)) - g(s)$\; \label{alg:aa7}
+}
+$h(s) \longleftarrow h(s) - (deltah(counter) - deltah(search(s)))$\; \label{alg:aa8}
+$h(s) \longleftarrow MAX(h(s), H(s, s_{goal})$\;\label{alg:aa9}
+$g(s) \longleftarrow \infty$\;
+}
+$search(s) \longleftarrow counter$\;
+}
+\Fn{UpdateState(s)}{
+\If{$s \in Open$}{
+$Open.DecreasePriority(s, CalculateKey(s))$\;
+}\Else{$Open.Insert(s, CalculateKey(s))$\;}
+}
+ \Fn{ComputePath()}{
+	\While{$Open.\textbf{Min}() < CalculateKey(s_{goal})$}{
+		$u \longleftarrow Open.\textbf{extractMin}()$\;
+		\ForEach{neighbor v of u}{
+			$InitializeState(v)$\; \label{alg:aa1}
+			\If{$g(v) > g(u) + c(u,v)$}{
+			$g(v) \longleftarrow g(u) + c(u,v)$\;
+			$parent(v) \longleftarrow u$\;
+			$UpdateState(v)$\;
+			}
+
+		}
+	}
+	
+	\If{$Open = \emptyset$}{\Return{false}}
+	\Return{true}
+ }
+\end{algorithm}
+
+\begin{algorithm}
+  \LinesNumbered
+\setcounter{AlgoLine}{39}
+%This is to hide Begin keyword
+\SetKwBlock{Begin}{}{end}
+
+\Begin{
+\Fn{Main()}{
+$counter \longleftarrow 0$\;
+$s_{start} \longleftarrow$ \emph{current node of the agent}\;
+$s_{goal} \longleftarrow$ \emph{current node of the target}\;
+$deltah(1) \longleftarrow 0$\;
+\ForAll{$s \in G.vertexSet()$}{$search(s) \longleftarrow 0$\;}
+}\While{$s_{start} \neq s_{goal}$}{
+$counter \longleftarrow counter + 1$\;
+$InitializeState(s_{start})$\; \label{alg:aa2}
+$InitializeState(s_{goal})$\; \label{alg:aa3}
+$g(s_{start}) \longleftarrow 0$\;
+$Open \longleftarrow \emptyset$\;
+$Open.Insert(s_{start}, CalculateKey(s_{start}))$\;
+\If{ComputePath() = false}{\Return{false}\tcc{target out of reach}}
+$pathcost(counter) \longleftarrow g(s_{goal})$\; \label{alg:aa6}
+\While{target not caught AND action costs on path do not increase AND target on path from $s_{start}$ to $s_{goal}$}{agent follows path from $s_{start}$ to $s_{goal}$\;}
+\If{agent caught target}{\Return{true}}
+$s_{start} \longleftarrow$ \emph{current node of the agent}\;
+$s_{newgoal} \longleftarrow$ \emph{current node of the target}\;
+\If{$s_{start} \neq s_{newgoal} $}{$InitializeState(s_{newgoal})$\;\label{alg:aa10}
+\If{$g(s_{newgoal}) + h(s_{newgoal}) < pathcost(counter)$}{
+$h(s_{newgoal}) \longleftarrow pathcost(counter) -g(s_{newgoal})$\;\label{alg:aa11}}
+$deltah(counter+1) \longleftarrow deltah(counter) + h(s_{newgoal}) $\; \label{alg:aa12}
+$s_{goal} \longleftarrow s_{newgoal}$\;
+}\Else{$deltah(counter + 1) \longleftarrow deltah(counter)$\;}
+update the increased\\ action cost (if any)
+}
+\Return{true}
+}
+
+
+\end{algorithm}
+
+
+\par{Si noti che, per semplcit\`a nella descrizione dell'algoritmo, si \`e preferito modellare il problema in modo che l'agent e il target si muovano a turno di un passo alla volta invece che farli muoversi simultaneamente. La parte centrale dell'algoritmo \`e come al solito la procedura \emph{ComputePath}(). Il cambiamento principale rispetto gli algoritmi visti fin'ora \`e che le ricerche possono essere effettuate in un ciclo iterativo per poter trovare ripetutamente nuovi cammini minimi dal nodo dell'agent al nodo del target. Dopo una ricerca, se viene trovato un percorso, l'agent si muove lungo di esso finch\`e il target non viene raggiunto, oppure nel caso in cui il target non si trovi pi\`u lungo il percorso, o ancora, finch\`e non avviene un cambiamento di costo per uno spostamento dell'agent. \`E stata inoltre introdotta una variabile \emph{counter}, che indica quante ricerche sono state effettuate (inclusa la ricerca corrente). Si usa inoltre il \emph{mapping} \emph{search(s)} per indicare se i valori \emph{g(s)} e \emph{h(s)} di un nodo \emph{s}  sono stati inizializzati nella \emph{counter}-esima ricerca. Inizialmente, per tutti i nodi \emph{s}, si ha che \emph{search(s) = 0}. Ci\`o significa che nessuno dei nodi \`e stato ancora inizializzato. In seguito l'algoritmo inizializza i nodi e inserisce il primo nella coda \emph{Open}.}
+\par{Viene dunque eseguita la procedura \emph{InitializeState(s)} sui nodi $s_{start}$ e $s_{goal}$, che vengono inizializzati prima di ogni ricerca $s_{start}$ e $s_{goal}$ (linee \ref{alg:aa2} e \ref{alg:aa3}). La stessa procedura viene chiamata ogni volta che occorrono i valori \emph{g(s)} e \emph{h(s)} di un nodo \emph{s} (linea \ref{alg:aa1}). Durante la \emph{counter}-esima ricerca (la ricerca corrente), nella procedura \emph{InitializeState(s)}, se \emph{h(s)} non \`e stata ancora inizializzato in nessuna ricerca precedente (\emph{search(s) = 0}), la procedura inizializza h(s) con l'euristica fornita dall'utente (linea \ref{alg:aa4}). Altrimenti, nel caso in cui $search(s) \neq counter$, ossia, se \emph{h(s)} non \`e stata calcolata nella ricerca corrente, l'algoritmo controlla se il nodo \emph{s} \`e stato espanso durante la \emph{search(s)}-esima ricerca, dove \`e stata calcolato il valore \emph{h(s)}: se $g(s) + h(s) < pathcost(search(s))$ (linea \ref{alg:aa5}) allora il valore $f(s)$ ($= g(s) + h(s)$) \`e inferiore del valore $g(s_{goal})$ durante la \emph{search(s)}-esima ricerca (linea \ref{alg:aa6}).}
+\par{Visto che il valore \emph{g()} del nodo $s_{goal}$ \`e sempre uguale al valore \emph{f()} del nodo $s_{goal}$ (solo con euristiche consistenti), il valore \emph{f()} di un nodo \emph{s} \`e inferiore del valore \emph{f()} del nodo $s_{goal}$ durante la ricerca \emph{search(s)}. Pertanto, il nodo \emph{s} deve essere stato espanso durante la ricerca \emph{search(s)}. L'algoritmo pertanto aggiorna il valore \emph{h(s)} a $pathcost(search(s)) - g(s)$ (linea \ref{alg:aa7}). L'algoritmo corregge infine il valore \emph{h(s)} secondo il nodo $s_{goal}$ corrente nel caso il target si sia spostato dall'ultima volta che il nodo \emph{s} \`e stato inizializzato dalla procedura \emph{InitializeState(s)} (linee \ref{alg:aa8} e \ref{alg:aa9}).}
+\par{Spiegher\`o di seguito nel dettaglio come \emph{Lazy MT-Adaptive A*} corregge il valore h(s): dopo ogni ricerca, se il \emph{target} si \`e mosso e quindi il nodo $s_{goal}$ non \`e pi\`u lo stesso, la correzione per il nodo di arrivo della ricerca corrente diminuisce i valori \emph{h} di tutti i nodi del valore \emph{h()} del nodo di arrivo della ricerca corrente. Tale nuovo valore \emph{h()} viene prima calcolato (linee \ref{alg:aa10}-\ref{alg:aa11}) e in seguito aggiunto alla somma corrente di tutte le correzioni (linea \ref{alg:aa12}). Nello specifico, il valore di \emph{deltah(x)} durante la \emph{x}-esima ricerca \`e uguale alla somma corrente di tutte le correzioni fino all'inizio della \emph{x}-esima ricerca. Pertanto se \emph{h(s)} \`e stato inizializzato in una ricerca precedente ma non in quella corrente ($search(s) \neq counter$), allora la procedura \emph{InitializeState(s)} corregge il valore \emph{h(s)} con la somma di tutte le correzioni delle ricerche tra le quali il nodo \emph{s} \`e stato inizializzato e la ricerca corrente, che \`e uguale alla differenza tra i valori \emph{deltah()} durante la ricerca corrente (\emph{deltah(counter)}) e durante la ricerca \emph{search(s)} (\emph{deltah(search(s))}). In sintesi, il fattore di correzione \`e uguale a $deltah(counter) - deltah(search(s))$ (linea \ref{alg:aa8}). In seguito viene scelto il massimo tra questo valore e il valore \emph{h()} fornito dall'utente (linea \ref{alg:aa9}), in linea con il nuovo nodo di arrivo rispetto la ricerca corrente.}
+\par{In questo modo, Lazy MT-Adaptive A* aggiorna e corregge i valori \emph{h()} di tutti i nodi solo nel caso in cui sono richiesti nelle future ricerche (approccio \emph{lazy}), che \`e computazionalmente meno costoso rispetto ad aggiornare i valori \emph{h()} di tutti i nodi espansi dopo ogni ricerca e di correggere i valori \emph{h()} di tutti i nodi espansi dopo ogni ricerca dove il nodo di arrivo \`e cambiato (approccio \emph{eager}).}
+\par{ Useremo di seguito un esempio per mostrare il comportamento di LMAA*.
+\begin{figure}[htp]
+\centering
+\includegraphics[scale=0.30]{/home/notsaved/legend.png}
+\caption{Legenda per la Figura \ref{img9} }
+\label{img8}
+\end{figure}
+\begin{figure}[htp]
+\centering
+\includegraphics[scale=0.4]{/home/notsaved/aastar_trace.png}
+\caption{Esempio di comportamento di LMTAA*}
+\label{img9}
+\end{figure}
+} 
+\par{La Figura \ref{img9}(a) mostra la prima ricerca di LMTAA* dal nodo corrente dell'agent D2 al nodo corrente del target C4. I nodi espansi sono colorati in grigio. Si noti che nell'immagine \`e stato introdotto un \emph{tie-breaker} che favorisce, tra i nodi con lo stesso valore \emph{f()}, quelli con il maggior valore \emph{g()}. Dopo la prima ricerca (come mostrato nella Figura\ref{img9}(b)), l'agent si muove lungo il percorso trovato finch\`e non arriva al nodo B1, dove scopre che il nodo B2 \`e bloccato e che il target si \`e spostato dal nodo C4 al nodo C3.}
+\par{Dal momento in cui il nodo di arrivo adesso non \`e pi\`u sul path calcolato in precedenza, l'agent esegue una seconda ricerca per ricalcolare un nuovo percorso dal suo nodo corrente B1 al nuovo nodo di arrivo C3. Si noti che in seguito al cambiamento del nodo di arrivo, l'algoritmo non ha corretto i valori \emph{h()} di tutti i nodi espansi. Invece calcola soltanto \emph{h}(C3) (= 1) (linee \ref{alg:aa10}-\ref{alg:aa11}), ossia il valore \emph{h()} del nodo di arrivo della seconda ricerca rispetto al nodo di arrivo della prima ricerca, e in seguito somma h(C3) a deltah(1) (linea \ref{alg:aa12}), risultando in deltah(2) = 1 (Figura \ref{img9}(c)), che sar\`a usato per correggere i valori \emph{h()} dei nodi che verranno espansi nelle future ricerche.}
+\par{La Figura \ref{img9}(d) mostra la seconda ricerca. L'algoritmo a questo punto avr\`a aggiornato e corretto i valori \emph{h()} dei nodi espansi solo nel momento in cui sono stati espansi. Ad esempio il nodo D2 non \`e stato aggiornato perch\`e non \`e stato selezionato nella seconda ricerca e pertanto il suo valore \emph{h()} rimarr\`a invariato per questa ricerca. }
+
+\section{Trailmax}
+\label{sec:trailmax}
+
+DA SCRIVERE DA SCRIVERE DA SCRIVERE DA SCRIVERE DA SCRIVERE DA SCRIVERE DA SCRIVERE 
+
+\chapter{Design ed Implementazione}
+Il class diagram dell'intera implementazione del progetto \`e mostrato nella figura \ref{classdiagram}. In questa sezione saranno oltre descritte le classi e i loro dettagli implementativi.
+\begin{figure}[htp]
+\centering
+\includegraphics[scale=0.25, angle=270,origin=c]{/home/notsaved/ClassDiagramProgetto.jpg}
+\caption{Class Diagram}
+\label{classdiagram}
+\end{figure}
+
+\section{Game}
+\begin{figure}[H]
+\centering
+\includegraphics[scale=0.80]{/home/notsaved/ClassDiagramProgettoGAME.jpg}
+\caption{Classe Game}
+\label{clssgame}
+\end{figure}
+La classe \emph{Game} mantiene le informazioni sullo stato del gioco, i riferimenti del giocatore e del relativo \emph{controller}, delle entit\`a instanziate e della mappa corrente. Inoltre implementa il \emph{loop} principale all'interno del quale avviene la logica del gioco e il \emph{rendering} degli elementi in gioco.
+
+\section{Player}
+\begin{figure}[H]
+\centering
+\includegraphics[scale=0.80]{/home/notsaved/ClassDiagramProgettoPLAYER.jpg}
+\caption{Classe Player}
+\label{clssplyr}
+\end{figure}
+
+La classe \emph{Player} mantiene le informazioni sullo stato del giocatore, la sua posizione sul terreno di gioco, velocit\`a di spostamento e immagine da renderizzare.
+
+\section{Game Controller}
+\begin{figure}[H]
+\centering
+\includegraphics[scale=0.80]{/home/notsaved/ClassDiagramProgettoCONTROLLER.jpg}
+\caption{Classe GameController}
+\label{gameController}
+\end{figure}
+
+La classe \emph{GameController} implementa l'interfaccia \emph{KeyListener} e gestisce gli input da tastiera, aggiornando in tal modo la posizione del giocatore, del quale mantiene un riferimento, similmente al \emph{design pattern} MVC.
+
+\section{Tile}
+\begin{figure}[H]
+\centering
+\includegraphics[scale=0.80]{/home/notsaved/ClassDiagramProgettoTILE.jpg}
+\caption{Classe Tile}
+\label{clssTile}
+\end{figure}
+
+La classe Tile rappresenta la pi\`u piccola unit\`a che compone una mappa di gioco. Questa classe mantiene una variabile di stato che indica se il tile \`e bloccato e una costante statica che indica la grandezza di ciascun tile.
+
+\section{GameMap}
+\begin{figure}[H]
+\centering
+\includegraphics[scale=0.80]{/home/notsaved/ClassDiagramProgettoGAMEMAP.jpg}
+\caption{Classe GameMap}
+\label{gamemap}
+\end{figure}
+
+La classe \emph{GameMap} si occupa di definire la geometria della mappa di gioco, mantenendo un riferimento di un array bidimensionale di oggetti Tile. Mantiene inoltre i riferimenti di eventuali stanze o ostacoli presenti sulla mappa. La geometria della mappa viene definita attraverso un oggetto che estende l'interfaccia \emph{MapGenerator}, di cui viene mantenuto il riferimento all'interno della classe GameMap, e facendo uso del design pattern \emph{Strategy} viene scelta la tipologia di mappa desiderata. Si occupa infine di generare il grafo associato a quella mappa basandosi sulla sua geometria.
+
+\section{TileMapElement}
+\begin{figure}[H]
+\centering
+\includegraphics[scale=0.80]{/home/notsaved/ClassDiagramProgettoTILEMAPELEMENT.jpg}
+\caption{Classe TileMapElement}
+\label{tilemapelement}
+\end{figure}
+
+Classe astratta che definisce un elemento generico sulla mappa di gioco. Gli attributi x e y ne determinano il posizionamento sull'area di gioco.
+
+\section{Room}
+
+\begin{figure}[H]
+\centering
+\includegraphics[scale=0.80]{/home/notsaved/ClassDiagramProgettoROOM.jpg}
+\caption{Classe Room}
+\label{classroom}
+\end{figure}
+
+La classe \emph{Room} estende la classe TileMapElement di cui sopra, ed \`e dotata di due attributi aggiuntivi che ne determinano l'altezza e la larghezza. In questo caso gli attributi x e y della superclasse TileMapElement si riconducono al Tile dell'angolo in basso a sinistra del rettangolo che la classe definisce. I Tile che appartengono al rettangolo definito dalla classe Room sono tutti traversabili. La classe \`e inoltre dotata di un metodo \emph{intersect}(), il quale restituisce true sse si verifica un \emph{overlapping} con un altro oggetto Room in ingresso.
+
+\section{Obstacle}
+\begin{figure}[H]
+\centering
+\includegraphics[scale=0.80]{/home/notsaved/ClassDiagramProgettoOBSTACLE.jpg}
+\caption{Classe Obstacle}
+\label{classobstacle}
+\end{figure}
+
+Similmente alla classe Room, la classe \emph{Obstacle} definisce un rettangolo di Tile ma in questo caso \emph{non} traversabili.
+
+\section{MapGenerator}
+\begin{figure}[H]
+\centering
+\includegraphics[scale=1.00]{/home/notsaved/ClassDiagramProgettoMAPGENERATOR.jpg}
+\caption{Classe MapGenerator}
+\label{classmapgenerator}
+\end{figure}
+
+Classe astratta che definisce un generico generatore di mappe.
+
+\section{IndoorMapGenerator}
+
+\begin{figure}[H]
+\centering
+\includegraphics[scale=0.80]{/home/notsaved/ClassDiagramProgettoINDOOR.jpg}
+\caption{Classe IndoorMapGenerator}
+\label{Classe IndoorMapGenerator}
+\end{figure}
+
+La classe \emph{IndoorMapGenerator} estende la classe astratta \emph{MapGenerator}. La costruzione della mappa \emph{indoor} avviene nel metodo \emph{generate()}, che fa a sua volta \emph{overriding} sul metodo astratto della superclasse. L'algoritmo per la generazione di mappe indoor sar\`a descritto dettagliatamente in una sezione successiva. 
+
+\section{OutdoorMapGenerator}
+
+\begin{figure}[H]
+\centering
+\includegraphics[scale=0.80]{/home/notsaved/ClassDiagramProgettoOUTDOOR.jpg}
+\caption{Classe OutdoorMapGenerator}
+\label{classoutdoorgenerator}
+\end{figure}
+
+La classe \emph{OutdoorMapGenerator} estende la classe astratta \emph{MapGenerator}. La costruzione della mappa \emph{outdoor} avviene nel metodo \emph{generate()}, che fa a sua volta \emph{overriding} sul metodo astratto della superclasse. L'algoritmo per la generazione di mappe outdoor sar\`a descritto dettagliatamente in una sezione successiva. 
+
+\section{DungeonMapGenerator}
+
+\begin{figure}[H]
+\centering
+\includegraphics[scale=0.80]{/home/notsaved/ClassDiagramProgettoDUNGEON.jpg}
+\caption{Classe DungeonMapGenerator}
+\label{classdungeonmap}
+\end{figure}
+
+La classe \emph{DungeonMapGenerator} estende la classe astratta \emph{MapGenerator}. La costruzione della mappa \emph{dungeon} avviene nel metodo \emph{generate()}, che fa a sua volta \emph{overriding} sul metodo astratto della superclasse. L'algoritmo per la generazione di mappe dungeon sar\`a descritto dettagliatamente in una sezione successiva. 
+
+\section{Entity}
+
+\begin{figure}[H]
+\centering
+\includegraphics[scale=0.80]{/home/notsaved/ClassDiagramProgettoENTITY.jpg}
+\caption{Classe Entity}
+\label{classentity}
+\end{figure}
+
+La classe \emph{Entity} definisce ogni agent all'interno dell'intero sistema di gioco, rendendola una delle classi pi\`u importanti dell'intero sistema. Essa tuttavia rappresenta solamente il \emph{modello} di una entit\`a. Infatti le funzionalit\`a di cervello pensante, e quindi di \emph{controller}, di ciascuna entit\`a sono delegate ad un oggetto che estende la classe astratta \emph{Behaviour} di cui si mantiene il riferimento all'interno della classe in esame. Attraverso il design pattern \emph{Strategy} sulla classe astratta Behaviour \`e possibile definire molteplici comportamenti per un Entity che esamineremo pi\`u dettagliatamente in una sezione successiva. Attraverso il metodo \emph{update}(), che riceve in ingresso la grandezza di un lasso di tempo, viene calcolato lo spostamento di un Entity.
+
+\section{Behaviour}
+
+\begin{figure}[H]
+\centering
+\includegraphics[scale=0.80]{/home/notsaved/ClassDiagramProgettoBEHAVIOUR.jpg}
+\caption{Classe Behaviour}
+\label{classbehaviour}
+\end{figure}
+
+Classe astratta che definisce un comportamento generico per un Entity. Le sue sottoclassi rappresentano il cervello di un Entity e si occupano di deciderne gli spostamenti, fungendo quindi da controller. Il comportamento di un Entity sar\`a dunque definito in una sua sottoclasse facendo \emph{overriding} sul metodo \emph{doBehaviour}(). La classe mantiene inoltre un riferimento ad un oggetto \emph{Pathfinder}, che potr\`a variare a seconda del tipo effettivo della classe Behaviour.
+
+\section{ChaseBehaviour}
+
+\begin{figure}[H]
+\centering
+\includegraphics[scale=0.80]{/home/notsaved/ClassDiagramProgettoCHASEBEHAVIOUR.jpg}
+\caption{Classe ChaseBehaviour}
+\label{classchase}
+\end{figure}
+
+La classe \emph{ChaseBehaviour} estende la classe Behaviour e definisce un comportamento di inseguimento di un Entity rispetto un Player oppure un altro Entity. Utilizza di default come pathfinder una istanza di \emph{LazyMovingAdaptiveAStar}. Mantiene inoltre una \emph{flag} di stato che indica se l'Entity ha raggiunto l'obiettivo ed in tal caso smette di muovere l'Entity.
+
+\section{FleeBehaviour}
+
+\begin{figure}[htp]
+\centering
+\includegraphics[scale=0.80]{/home/notsaved/ClassDiagramProgettoEVADEBEHAVIOUR.jpg}
+\caption{Classe EvadeBehaviour}
+\label{classevade}
+\end{figure}
+
+La classe \emph{FleeBehaviour} estende la classe Behaviour e definisce un comportamento di evasione di un Entity rispetto un Player oppure un altro Entity. Utilizza di default come pathfinder una istanza di \emph{Trailmax}. Mantiene inoltre una flag di stato che indica se l'Entity \`e stato raggiunto dal giocatore o dall'Entity dal quale si sta scappando. In tal caso smette di muovere l'Entity.
+
+\section{Pathfinder}
+
+\begin{figure}[H]
+\centering
+\includegraphics[scale=0.80]{/home/notsaved/ClassDiagramProgettoPATHFINDER.jpg}
+\caption{Classe Pathfinder}
+\label{classpathfind}
+\end{figure}
+
+Classe astratta che definisce un pathfinder generico. Le sue sottoclassi che implementano un algoritmo di pathfinding dovranno fare overriding sul metodo astratto \emph{getShortestPath}() il quale ritorna una lista di nodi che compongono il percorso trovato.
+
+\section{Dijkstra}
+
+\begin{figure}[H]
+\centering
+\includegraphics[scale=0.80]{/home/notsaved/ClassDiagramProgettoDIJKSTRA.jpg}
+\caption{Classe Dijkstra}
+\label{classdijkstra}
+\end{figure}
+
+La classe \emph{Dijkstra} estende la classe astratta \emph{Pathfinder} ed implementa una versione dell'omonimo algoritmo di cui ne abbiamo gi\`a ampiamente discusso nella sezione \ref{sec:dijkstra}.
+
+\section{AStar}
+
+\begin{figure}[H]
+\centering
+\includegraphics[scale=0.80]{/home/notsaved/ClassDiagramProgettoASTAR.jpg}
+\caption{Classe AStar}
+\label{classastar}
+\end{figure}
+
+La classe \emph{AStar} estende la classe astratta Pathfinder ed implementa una versione dell'omonimo algoritmo di cui ne abbiamo gi\`a ampiamente discusso nella sezione \ref{sec:astar}
+
+\section{ThetaStar}
+
+\begin{figure}[H]
+\centering
+\includegraphics[scale=0.80]{/home/notsaved/ClassDiagramProgettoTHETA.jpg}
+\caption{Classe ThetaStar}
+\label{classtheta}
+\end{figure}
+
+La classe \emph{ThetaStar} estende la classe astratta Pathfinder ed implementa una versione dell'omonimo algoritmo di cui ne abbiamo gi\`a ampiamente discusso nella sezione \ref{sec:theta}
+
+\section{BidirectionalAStar}
+
+\begin{figure}[H]
+\centering
+\includegraphics[scale=0.80]{/home/notsaved/ClassDiagramProgettoBIDIRECTIONAL.jpg}
+\caption{Classe BidirectionalAStar}
+\label{classbidirectional}
+\end{figure}
+
+La classe \emph{BidirectionalAStar} estende la classe astratta Pathfinder ed implementa una versione dell'omonimo algoritmo di cui ne abbiamo gi\`a ampiamente discusso nella sezione \ref{sec:bidirectional}
+
+\section{LazyMovingTargetAdaptiveAStar}
+\begin{figure}[H]
+\centering
+\includegraphics[scale=0.80]{/home/notsaved/ClassDiagramProgettoLAZYADAPTIVE.jpg}
+\caption{Classe LazyMovingTargetAdaptiveAStar}
+\label{classlazyadaptive}
+\end{figure}
+
+
+
+La classe \emph{LazyMovingAdaptiveAStar} estende la classe astratta Pathfinder ed implementa una versione dell'omonimo algoritmo di cui ne abbiamo gi\`a ampiamente discusso nella sezione \ref{sec:adaptive}
+
+\section{Trailmax}
+
+\begin{figure}[H]
+\centering
+\includegraphics[scale=0.80]{/home/notsaved/ClassDiagramProgettoTRAILMAX.jpg}
+\caption{Classe Trailmax}
+\label{classtrailmax}
+\end{figure}
+
+La classe \emph{Trailmax} estende la classe astratta Pathfinder ed implementa una versione dell'omonimo algoritmo di cui ne abbiamo gi\`a ampiamente discusso nella sezione \ref{sec:trailmax}
+
+\chapter{Applicazioni e Risultati sperimentali}
+
+\par{In questo capitolo verranno messi a confronto i diversi algoritmi di pathfinding implementati e verranno descritti gli esperimenti condotti per la valutazione di questi ultimi. Gli esperimenti sono stati condotti su un PC Lenovo ThinkPad T430 con processore Quad-Core Intel(R) Core(TM) i5-3360M CPU @ 2.80GHz e 4GB di memoria disponibili.
+}
+
+\section{Le Mappe}
+
+Al fine dell'esperimento sono state sviluppate tre diverse metodologie di generazione pseudocasuale di mappe basate su griglie connesse in 8 direzioni. Le metodologie di generazione sono descritte nelle prossime sezioni.
+\subsection{Mappe \emph{Dungeon}}
+\begin{figure}[H]
+\centering
+\includegraphics[scale=0.30]{/home/notsaved/Documenti/2dgrid-game/DijkstraDungeon.png}
+\caption{mappa \emph{Dungeon}}
+\label{img1}
+\end{figure}
+%Support for two high-level {\LaTeX} building systems, \emph{rubber}\footnote{https://launchpad.net/rubber/} \& \emph{latexmk}\footnote{http://www.phys.psu.edu/{\textasciitilde}collins/software/latexmk-jcc/} has been added as well. Your preferred typesetter can be configured through the Compilation tab in the Preferences menu. Typesetters that are not installed on your system will not be selectable. 
+\par{Questo tipo di mappa si compone di grandi stanze che consistono in un rettangolo di tile traversabili collegate fra loro da lunghi corridoi. Per la realizzazione di questo tipo di mappa ci si \`e liberamente ispirati allo stile delle mappe sotterranee tipiche della saga di \emph{Dungeons and Dragons} (vedi figura \ref{img111}).}
+\begin{figure}[H]
+\centering
+\includegraphics[scale=0.90]{/home/notsaved/Documenti/dungeon-069.jpg}
+\caption{Esempio mappa Dungeons and Dragons}
+\label{img111}
+\end{figure}
+\iffalse
+\par {
+\begin{minipage}{\linewidth}
+\lstdefinestyle{customjava}{
+  belowcaptionskip=1\baselineskip,
+  breaklines=true,
+  frame=L,
+  xleftmargin=\parindent,
+  language=java,
+  showstringspaces=false,
+  basicstyle=\footnotesize\ttfamily,
+  keywordstyle=\bfseries\color{black},
+  commentstyle=\itshape\color{black},
+  identifierstyle=\color{blue},
+  stringstyle=\color{orange},
+}
+\lstset{style=customjava, label=lst1, caption=Classe java "\emph{Room}"}
+\begin{lstlisting}
+public class Room implements TileMapElement{
+	private int x, y, width, height, area;
+
+	public Room(int x,int y, int width, int height){
+		this.x=x;
+		this.y=y;
+		this.width=width;
+		this.height=height;
+		this.area=width*height;
+	}
+}
+
+\end{lstlisting}
+\end{minipage}
+}
+
+\par{
+Nel blocco di codice \ref{lst1} vi \`e riportata la definizione della classe \emph{Room} che definisce una singola stanza. Gli attributi \emph{x} e \emph{y} sono le coordinate geometriche del tile nell'angolo in basso a sinistra della stanza mentre gli attributi \emph{width} e \emph{height} rispettivamente larghezza e altezza della stanza (espressi in numero di tile). Questa classe \`e inoltre dotata di un metodo \emph{intersect()} cos\`i definito:}
+
+\lstdefinestyle{customjava}{
+  belowcaptionskip=1\baselineskip,
+  breaklines=true,
+  frame=L,
+  xleftmargin=\parindent,
+  language=java,
+  showstringspaces=false,
+  basicstyle=\footnotesize\ttfamily,
+  keywordstyle=\bfseries\color{black},
+  commentstyle=\itshape\color{black},
+  identifierstyle=\color{blue},
+  stringstyle=\color{orange},
+}
+\lstset{style=customjava, caption=metodo \emph{intersect}}
+\begin{lstlisting}
+public boolean intersect(Object other){
+    if(other.getClass()!=Room.class)
+        return false;
+    Room r = (Room) other;
+    return !(this.x+ this.width < r.x 
+    	   || r.x + r.width < this.x 
+    	   || this.y+this.height < r.y 
+           || r.y + r.height < this.y);
+}
+
+\end{lstlisting}
+
+\par{Tale metodo prende in ingresso una \emph{stanza} e restituisce \emph{true} se la \emph{stanza} in ingresso si sovrappone con quella di istanza (\emph{this}).\fi
+ \par{L'algoritmo utilizzato per la generazione di questo tipo di mappa prende in ingresso una griglia di interi interamente riempita di 1 con cui si rappresentano dei tile bloccati. In seguito sceglie in modo casuale (ma entro un certo range prestabilito) la posizione e le dimensioni di una stanza da posizionare nella mappa. Tali parametri vengono scelti in modo da non sovrapporsi con quelle gi\`a posizionate. Infine, quando la somma delle aree delle \emph{stanze} posizionate sar\`a maggiore o uguale a una percentuale prestabilita, l'algoritmo provvedera' a connetterle creando dei tunnel ortogonali da una stanza a un'altra. In particolare, iterativamente ogni stanza verr\`a connessa con quella successivamente creata mediante un tunnel di locazioni traversabili i cui estremi sono i centri delle stanze di partenza e di arrivo.  Nel caso in cui sia l'ascissa che l'ordinata dei due centri sono distinti, un fattore di casualit\`a del 50\% determiner\`a se il tunnel creato sar\`a prima orizzontale e poi verticale o viceversa.} L'algoritmo utilizzato e' il seguente:\par
+
+\SetKwProg{Fn}{Function}{}{}
+\begin{algorithm}[H]
+\PrintSemicolon
+\caption{Dungeon map generator}
+\KwData{MAX\_ROOM\_SIZE: integer, MIN\_ROOM\_SIZE: integer, COVERAGE\_PERCENTAGE: integer,  rooms: list of \emph{Room} object}
+\KwIn{Array bidimensionale di interi con dimensioni \emph{WIDTH} x \emph{HEIGHT}}
+\KwResult{L'array bidimensionale in ingresso viene elaborato in una mappa}
+\newcommand{\forcond}{$i=0$ \KwTo $n$}
+
+\Fn{main (map)}{
+
+
+ \While{$covered\_area < COVERAGE\_PERCENTAGE $}{
+ \tcc{assegno le dimensioni della stanza e la sua posizione randomicamente}
+  $w$ $\leftarrow$ \textbf{random}(((ROOM\_MAX\_SIZE - ROOM\_MIN\_SIZE) + 1) + ROOM\_MIN\_SIZE\;
+  $h$ $\leftarrow$ \textbf{random}(((ROOM\_MAX\_SIZE - ROOM\_MIN\_SIZE) + 1) + ROOM\_MIN\_SIZE\;
+  $x$ $\leftarrow$ \textbf{random}(WIDTH - W - 1) + 1\;
+  $y$ $\leftarrow$ \textbf{random}(HEIGHT - H - 1) + 1\;
+  $room$ $\leftarrow$ \textbf{new} Room(w,h,x,y)\;
+  $noGood$ $\leftarrow$ false\;
+  \For{$r\in rooms$ \tcc{controllo che non ci siano sovrapposizioni con le stanze gia' presenti}}{
+  	\If{$room.\textbf{intersect}(r)$}{
+  		$noGood$ $\leftarrow$ true\;
+  		\textbf{break\;}}
+  }
+  \If{$!noGood$ \tcc{riempio di zeri la griglia nelle coordinate corrispondenti alla stanza}}{
+  \For{$i = room.X$ \KwTo $(room.X + room.W)$ }{
+  \For{$j = room.Y$ \KwTo $(room.Y + room.H)$ }{
+  $map_{ij}$ $\leftarrow$ 0\;
+  }}
+  $rooms.\textbf{add}(room)$\;
+  $covered\_area \leftarrow covered\_area + room.\textbf{getArea}()$\;}
+
+ }
+  $\textbf{createTunnels}(map)$;\ \tcc{connetti le stanze create}
+
+}
+\end{algorithm}
+
+\begin{algorithm}
+  \LinesNumbered
+\setcounter{AlgoLine}{26}
+%This is to hide Begin keyword
+\SetKwBlock{Begin}{}{end}
+ \Fn{createTunnels(map)}{
+ 	$prev \longleftarrow \emptyset$\;
+ 	\For{$r\in rooms$ }{
+ 	\If{$r.\textbf{hasPrev}()$}{
+ 	$prev \longleftarrow r.prev$\;
+ 	\If{\textbf{random}(\textbf{range}(0,100)) $>$ 50 \tcc{decido casualmente se creare prima un tunnel orizzontale e poi verticale o viceversa}}{
+ 	$\textbf{createHorizontalTunnel}(\begin{tabular}{@{\hspace*{1.0em}}l@{}}
+map, prev.\textbf{getCenterX}() \\
+   	r.\textbf{getCenterX}(), prev.\textbf{getCenterY}()\end{tabular})$\;
+ 	$\textbf{createVerticalTunnel}(\begin{tabular}{@{\hspace*{1.0em}}l@{}}
+map, prev.\textbf{getCenterY}() \\
+   	r.\textbf{getCenterY}(), r.\textbf{getCenterX}()\end{tabular})$\;
+ 	}
+ 	\Else{
+ 	$\textbf{createVerticalTunnel}(\begin{tabular}{@{\hspace*{1.0em}}l@{}}
+map, prev.\textbf{getCenterY}() \\
+   	r.\textbf{getCenterY}(), prev.\textbf{getCenterX}()\end{tabular})$\;
+ 	$\textbf{createHorizontalTunnel}(\begin{tabular}{@{\hspace*{1.0em}}l@{}}
+map, prev.\textbf{getCenterX}() \\
+   	r.\textbf{getCenterX}(), r.\textbf{getCenterY}()\end{tabular})$\;
+ 	}
+ 	}
+ 	}
+
+ }
+
+ \Fn{createHorizontalTunnel(map, x1, x2, y)}{
+ 	\For{$i=\textbf{min}(x1,x2)$ \KwTo $\textbf{max}(x1,x2)$}{
+ 	 	$map_{i,y} \leftarrow 0$\;}
+ }
+  \Fn{createVerticalTunnel(map, y1, y2, x)}{
+   	\For{$j=\textbf{min}(y1,y2)$ \KwTo $\textbf{max}(y1,y2)$}{
+ 	 	$map_{x,j} \leftarrow 0$\;}
+ }
+  
+\end{algorithm}
+
+
+
+\subsection{Mappe \emph{Outdoor}}
+\begin{figure}[h]
+\centering
+\includegraphics[scale=0.30]{/home/notsaved/Documenti/2dgrid-game/DijkstraOutdoor.png}
+\caption{mappa \emph{Outdoor}}
+\label{img2}
+\end{figure}
+Questo tipo di mappa, in maniera speculare al tipo di mappa della sezione precedente, si caratterizza da una griglia completamente riempita da tile traversabili dove vengono posizionati casualmente degli ostacoli rettangolari composti di tile bloccati di dimensioni a loro volta casuali.
+Come nella tipologia di mappe precedenti, gli ostacoli vengono posizionati in modo da non sovrapporsi, perch\`e dotati del medesimo metodo \emph{intersect()}. L'algoritmo utilizzato e' grossomodo speculare a quello di generazione delle mappe di tipo \emph{Hallways}, fatta eccezione per la creazione dei tunnel. L'algoritmo di generazione terminer\`a dunque quando una certa percentuale di area di gioco sar\`a coperta da ostacoli.
+%Added for your viewing convenience is a continuous preview mode for the PDF. This mode is enabled by default, but can also be disabled through the \emph{(View $\rightarrow$ Page layout in preview)} menu. Complementary to this feature is SyncTeX integration, which allows you to synchronize the position in your editor with the PDF preview. 
+\subsection{Mappe \emph{Indoor}}
+\begin{figure}[H]
+\centering
+\includegraphics[scale=0.30]{../DijkstraIndoor.png}
+\caption{mappa Indoor}
+\label{img3}
+\end{figure}
+
+\par L'ultimo tipo di mappa realizzato consiste in uno spazio partizionato in diversi sottospazi (o stanze) servendosi di \emph{tile} non traversabili come muri divisori. Per rendere raggiungibili le stanze fra loro ogni muro divisorio contiene un varco traversabile. L'algoritmo utilizzato divide ricorsivamente una griglia inizialmente totalmente traversabile. A seconda dell'orientamento, esso divide la griglia orizzontalmente o verticalmente disegnando un muro divisore e scegliendo un punto casuale su di esso dove posizionare il passaggio. In seguito divider\`a ricorsivamente i due sottospazi partizionati con orientamento opposto, finch\`e  non verra' raggiunto il caso base della ricorsione, ossia quando le stanze avranno dimensioni minori del minimo ammissibile.
+
+\begin{algorithm}[H]
+\PrintSemicolon
+\caption{indoor map generator}
+\KwData{ROOM\_MIN\_SIZE: integer}
+\KwIn{\;
+Array bidimensionale di interi con dimensioni \emph{WIDTH} x \emph{HEIGHT} di soli zeri
+\; offset di x e y
+\; larghezza ed altezza della stanza
+\; orientamento della divisione da effettuare}
+\KwResult{L'array bidimensionale in ingresso viene elaborato in una mappa di tipo indoor}
+\newcommand{\forcond}{$i=0$ \KwTo $n$}
+
+\Fn{\textbf{divide} (map, x\_offset, y\_offset, width, height, orientation)}{
+
+	\If{$(width < ROOM\_MIN\_WIDTH)$ \textbf{OR} $(heigth < ROOM\_MIN\_HEIGHT)$}{\Return\;}
+\tcc{divido orizontalmente o verticalmente}
+	$horizontal \leftarrow orientation == true$\;
+\tcc{scelgo da dove comincera' il muro}
+
+\If{$horizontal$}{
+	$wx \leftarrow x\_offset$\;
+	$wy \leftarrow y\_offset + random(height - 2)$\;
+	}
+\Else{
+	$wx \leftarrow x\_offset + random(width - 2)$\;
+	$wy \leftarrow y\_offset$\;
+	}
+
+\tcc{scelgo un punto lungo il muro da usare come passaggio}
+
+\If{$horizontal$}{
+	$px \leftarrow wx + random(width)$\;
+	$py \leftarrow wy$\;
+	}
+\Else{
+	$px \leftarrow wx$\;
+	$py \leftarrow wy + random(height)$\;
+	}
+\tcc{scelgo la lunghezza del muro}
+\If{$horizontal$}{
+	$lenght \leftarrow width$\;
+	}
+\Else{
+	$lenght \leftarrow height$\;
+	}
+
+
+}
+\end{algorithm}
+
+
+\begin{algorithm}
+  \LinesNumbered
+\setcounter{AlgoLine}{27}
+%This is to hide Begin keyword
+\SetKwBlock{Begin}{}{end}
+
+\Begin{
+\tcc{disegno il muro}
+	\If{$horizontal$}{
+		$dx \leftarrow 1$\;
+		$dy \leftarrow 0$\;
+		}
+	\Else{
+		$dx \leftarrow 0$\;
+		$dy \leftarrow 1$\;
+	}
+	\For{$i=0$ \KwTo $lenght$}{
+		\If{$wx \neq px$ \textbf{AND} $wy \neq py$}{
+			$map_{wx,wy} \leftarrow 1$\;
+		}
+		$wx \leftarrow wx + dx$\;
+		$wy \leftarrow wy + dy$\;
+	}
+	$nx \leftarrow x\_offset$\;
+	$ny \leftarrow y\_offset$\;
+	\tcc{se ho diviso orizzontalmente, dividi al di sopra del muro e poi al di sotto. Altrimenti prima a sinistra e poi a destra}
+	
+	\If{$horizontal$}{
+		$new\_width \leftarrow width$\;
+		$new\_height \leftarrow wy - y\_offset + 1$\;
+		}
+	\Else{
+		$new\_width \leftarrow wx - x\_offset + 1$\;
+		$new\_height \leftarrow height$\;
+	}
+	$\textbf{divide}(map, nx, ny, new\_width, new\_height, w < h)$\;
+	\If{horizontal}{
+	$nx \leftarrow x\_offset$\;
+	$ny \leftarrow wy +1$\;
+	$new\_width \leftarrow width$\;
+	$new\_height \leftarrow y\_offset + height - wy - 1$\;}
+\Else{
+	$nx \leftarrow wx + 1$\;
+	$ny \leftarrow y\_offset$\;
+	$new\_width \leftarrow x\_offset + width - wx - 1$\;
+	$new\_height \leftarrow height$;}
+$\textbf{divide}(map, nx, ny, new\_width, new\_height, w < h)$\;
+}
+
+  
+\end{algorithm}
+
+\section{Moving Target Test}
+\par{Il test \`e stato condotto su 80 mappe casuali per ogni tipologia descritta. Su ogni singola mappa sono stati scelti casualmente 30 coppie di punti come nodi di partenza e nodi di arrivo rispettivamente raggiungibili tra loro. La tipologia di test adottata \`e di tipo \emph{moving target}, descritta qui di seguito. Nella cella di partenza viene posizionato un agent \emph{inseguitore}, il quale calcola un percorso verso l'agent posizionato nella cella di arrivo e si muove lungo quel percorso. A sua volta l'agent-target posizionato nella cella di arrivo calcola una via di fuga rispetto l'agent inseguitore con l'algoritmo Trailmax e si muove lungo tale percorso di evasione ma con una frequenza minore dell'agent inseguitore per garantire che l'agent-target venga raggiunto. In tal modo l'agent inseguitore \`e costretto a calcolare periodicamente un nuovo percorso ogni volta che l'agent-target si sposta lungo il suo percorso di fuga.Per gli algoritmi euristici \`e stata usata la octile distance come funzione euristica giacch\`e le mappe sul quale \`e stato condotto il test sono connesse in 8 direzioni. I risultati raccolti sono mostrati nella tabella \ref{tab:risultati}. Nelle parentesi quadre \`e riportata la deviazione standard della media del dato a cui si riferisce per dimostrare il significato statistico dei risultati.}
+
+\begin{table}[H]
+\caption {Risultati Sperimentali } \label{tab:risultati} 
+\centering
+
+\resizebox*{1.2\textwidth}{!}{
+
+\begin{tabular}{c|c|c|c|c|c|} 
+
+\hline
+\multicolumn{5}{c}{\textbf{Mappe Indoor} [128 x 128]}\\
+\hline 
+	 & (a) & (b) & (c) & (d) & (e)\\
+\hline
+	\textbf{Dijkstra} & 52705 & 252779 & 79687387.0 [471724.54] & 250337.0 [1606.63] & 4.74\\
+\hline
+	\textbf{A\^*} & 50942 & 252021 & 29664860.0 [200887.14] & 181561.0 [1477.88] & 3.56\\
+\hline
+	\textbf{BidirectionalA\^*} & 53682 & 257290 & 40574839.0 [280338.7] & 242255.0 [1984.92]& 4.51\\
+\hline
+	\textbf{LazyMovingTargetAdaptiveA\^*} & 52842 & 252486 & 22442520.0 [138704.53] & 102767.0 [1095.78] & 1.94\\ \hline 
+	\multicolumn{5}{c}{\textbf{Mappe Outdoor} [128 x 128]}\\
+\hline
+	\textbf{Dijkstra} & 3690 & 158622 & 14210668.0 [21984.60] & 96055.0 [1068.08] & 26.03\\
+\hline
+	\textbf{A\^*} & 3029 & 158044 & 1416871.0 [4356.03] & 66850.0 [1015.22] & 22.06\\
+\hline
+	\textbf{BidirectionalA\^*} & 2899 & 159232 & 1565886.0 [4763.25] & 43624.0 [874.76]& 15.04\\
+\hline
+	\textbf{LazyMovingTargetAdaptiveA\^*} & 3005 & 157964 & 1405686.0 [4183.93] & 19893.0 [563.78] & 6.61\\ \hline 
+		\multicolumn{5}{c}{\textbf{Mappe Dungeon} [128 x 128]}\\
+\hline
+	\textbf{Dijkstra} & 45422 & 197053 & 52522222.0 [233228.94] & 180432.0 [1415.26] & 3.97\\
+\hline
+	\textbf{A\^*} & 37921 & 192708 & 6176276.0 [45504.01] & 60681.0 [908.87] & 1.60\\
+\hline
+	\textbf{BidirectionalA\^*} & 40349 & 196231 & 7884858.0 [61489.88] & 78866.0 [1011.01]& 1.95\\
+\hline
+	\textbf{LazyMovingTargetAdaptiveA\^*} & 39883 & 193277 & 5953568.0 [36799.00] & 38881.0 [722.78] & 0.97\\ \hline 
+			\multicolumn{5}{c}{(a) = numero di ricerche finch\`e il target non \`e raggiunto;} \\ \multicolumn{5}{c}{(b) = numero di mosse finch\`e il target non \`e raggiunto;} \\ \multicolumn{5}{c}{(c) = totale delle celle espanse finch\`e  il target non \`e raggiunto [deviazione standard della media];} \\ \multicolumn{5}{c}{(d) = tempo totale di ricerca finch\`e il target non \`e raggiunto (in millisecondi) [deviazione standard della media];} \\ \multicolumn{5}{c}{(e) = tempo medio di ricerca (in millisecondi) }\\
+
+\end{tabular}
+
+}
+
+\end{table}
+
+\end{document}

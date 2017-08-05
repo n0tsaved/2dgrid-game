@@ -66,6 +66,8 @@ public final class DijkstraShortestPath<V, E> implements Pathfinder<V,E>
     private Graph<V,E> graph;
     private long elapsedTime;
 
+    protected boolean verbose = true;
+
 
     /**
      * Creates and executes a new DijkstraShortestPath algorithm instance. An
@@ -241,6 +243,8 @@ public final class DijkstraShortestPath<V, E> implements Pathfinder<V,E>
             if (vertex.equals(targetVertex)) {
                 elapsedTime = System.currentTimeMillis() - now;
                 createEdgeList(graph, iter, sourceVertex, targetVertex);
+                if(verbose)
+                    System.out.println("["+this.getClass()+"] source: "+sourceVertex+" target: "+targetVertex+" elapsed: "+elapsedTime+" expanded: "+getNumberOfExpandedNodes());
                 return path;
             }
         }

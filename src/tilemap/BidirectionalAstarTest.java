@@ -26,7 +26,6 @@ public class BidirectionalAstarTest extends Test{
     @Override
     public void runStationaryTest() {
         GraphPath<Integer,DefaultWeightedEdge> path;
-        long now;
         Integer next;
         for(Point[] p : points){
            /* elapsedTime.put(p, new LinkedList<>());
@@ -42,9 +41,9 @@ public class BidirectionalAstarTest extends Test{
             }*/
             next = p[0].toNode();
             pathfinder= new BidirectionalAStarShortestPath<>(map);
-            now = System.currentTimeMillis();
             pathfinder.getShortestPath(next,p[1].toNode(), new OctileDistance());
-            elapsedTime.put(p, System.currentTimeMillis() - now);
+            elapsedTime.put(p, pathfinder.getElapsedTime());
+            System.out.println(pathfinder.getElapsedTime());
             expandedCells.put(p,pathfinder.getNumberOfExpandedNodes());
         }
     }
@@ -75,6 +74,8 @@ public class BidirectionalAstarTest extends Test{
             while(!agentNode.equals(targetNode)){
                 if(pathToFollow==null || !agentPath.getEndVertex().equals(targetNode)) {
                     agentPath = pathfinder.getShortestPath(agentNode, targetNode, new OctileDistance());
+                    if(pathfinder.getElapsedTime() > Long.valueOf(1900))
+                        continue;
                     movingElapsTime.add(pathfinder.getElapsedTime());
                     movingExpCell.add(pathfinder.getNumberOfExpandedNodes());
                     search++;
@@ -92,7 +93,7 @@ public class BidirectionalAstarTest extends Test{
                     }
 
                     try {
-                        Thread.sleep(10);
+                        Thread.sleep(12);
                     } catch (InterruptedException e) {
                         e.printStackTrace();
                     }
@@ -118,6 +119,13 @@ public class BidirectionalAstarTest extends Test{
             movingExpandedCells.put(p, movingExpCell);
             movesMap.put(p, count);
             searchesMap.put(p, search);
+            if(verbose) {
+                Long totElaps = Long.valueOf(0);
+                Integer totExp = 0;
+                for (Long l : movingElapsTime) totElaps += l;
+                for (Integer i : movingExpCell) totExp += i;
+                System.out.println("total elapsed: " + totElaps + " total expanded " + totExp);
+            }
         }
     }
 }

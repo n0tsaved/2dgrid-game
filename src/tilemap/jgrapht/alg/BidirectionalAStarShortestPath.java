@@ -38,6 +38,8 @@ public class BidirectionalAStarShortestPath<V,E>  implements Pathfinder<V,E> {
     protected double bestPathLength;
     private long elapsedTime = Long.MAX_VALUE;
 
+    protected boolean verbose = true;
+
     public BidirectionalAStarShortestPath(Graph<V, E> graph) {
         if(graph==null)
             throw new IllegalArgumentException("Graph cannot be null!");
@@ -88,6 +90,8 @@ public class BidirectionalAStarShortestPath<V,E>  implements Pathfinder<V,E> {
                 if(bestPathLength <= ((forwardDistance >= backwardDistance) ? forwardDistance : backwardDistance)){
                     //System.out.println("forward: "+forwardRun+", backward: "+backwardRun);
                     elapsedTime = System.currentTimeMillis() - now;
+                    if(verbose)
+                        System.out.println("["+this.getClass()+"] source: "+sourceVertex+" target: "+targetVertex+" elapsed: "+elapsedTime+" expanded: "+getNumberOfExpandedNodes());
                     //GameMap.data[(Integer) touchNode%GameMap.WIDTH][(Integer) touchNode/GameMap.WIDTH].isFrontier = true;
                     return buildGraphPath(sourceVertex, targetVertex);}
             }

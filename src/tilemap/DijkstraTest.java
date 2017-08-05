@@ -27,8 +27,7 @@ public class DijkstraTest extends Test {
 
     @Override
     public void runStationaryTest() {
-        GraphPath<Integer,DefaultEdge> path;
-        long now;
+        GraphPath<Integer,DefaultWeightedEdge> path;
         Integer next;
         for(Point[] p : points){
            /* elapsedTime.put(p, new LinkedList<>());
@@ -43,10 +42,9 @@ public class DijkstraTest extends Test {
                 next=Graphs.getOppositeVertex(map.getGraph(), path.getEdgeList().get(0), next);
             }*/
            next = p[0].toNode();
-           now = System.currentTimeMillis();
            pathfinder= new DijkstraShortestPath<Integer, DefaultWeightedEdge>(map, next, p[1].toNode());
            //elapsedTime.put(p, TimeUnit.NANOSECONDS.toMillis(System.nanoTime() - now));
-            elapsedTime.put(p, System.currentTimeMillis() - now);
+            elapsedTime.put(p, pathfinder.getElapsedTime());
             expandedCells.put(p,pathfinder.getNumberOfExpandedNodes());
         }
     }
@@ -80,6 +78,8 @@ public class DijkstraTest extends Test {
             while(!agentNode.equals(targetNode)){
                 if(pathToFollow==null || !agentPath.getEndVertex().equals(targetNode)) {
                     agentPath = pathfinder.getShortestPath(agentNode, targetNode, new OctileDistance());
+                    if(pathfinder.getElapsedTime() > Long.valueOf(1900))
+                        continue;
                     movingElapsTime.add(pathfinder.getElapsedTime());
                     movingExpCell.add(pathfinder.getNumberOfExpandedNodes());
                     search++;
@@ -99,7 +99,7 @@ public class DijkstraTest extends Test {
                     }
 
                     try {
-                        Thread.sleep(10);
+                        Thread.sleep(12);
                     } catch (InterruptedException e) {
                         e.printStackTrace();
                     }
@@ -124,6 +124,13 @@ public class DijkstraTest extends Test {
             movingExpandedCells.put(p, movingExpCell);
             movesMap.put(p, count);
             searchesMap.put(p, search);
+            if(verbose) {
+                Long totElaps = Long.valueOf(0);
+                Integer totExp = 0;
+                for (Long l : movingElapsTime) totElaps += l;
+                for (Integer i : movingExpCell) totExp += i;
+                System.out.println("total elapsed: " + totElaps + " total expanded " + totExp);
+            }
         }
     }
 

@@ -75,7 +75,7 @@ public class LazyMovingTargetAdaptiveAStarShortestPath<V,E extends DefaultWeight
         Integer current_search = search.get(s);
         if(current_search.equals(0)){
             hScoreMap.put(s,admissibleHeuristic.getCostEstimate(s,goal));
-            //gScoreMap.put(s, Double.POSITIVE_INFINITY);
+            gScoreMap.put(s, Double.POSITIVE_INFINITY);
         }else if(!current_search.equals(counter)){
             Double g_value = gScoreMap.get(s); if(g_value == null) g_value = Double.POSITIVE_INFINITY;
             Double h_value = hScoreMap.get(s);
@@ -87,7 +87,7 @@ public class LazyMovingTargetAdaptiveAStarShortestPath<V,E extends DefaultWeight
             double newHvalue = admissibleHeuristic.getCostEstimate(s, goal);
             h_value = (h_value > newHvalue) ? h_value : newHvalue;
             hScoreMap.put(s, h_value);
-            //gScoreMap.put(s,Double.POSITIVE_INFINITY);
+            gScoreMap.put(s,Double.POSITIVE_INFINITY);
         }
         search.put(s,counter);
     }
@@ -261,8 +261,8 @@ public class LazyMovingTargetAdaptiveAStarShortestPath<V,E extends DefaultWeight
         if(!goal.equals(newGoal)) {
             initializeState(newGoal);
             Double g_score = gScoreMap.get(newGoal);
-            if(g_score == null) g_score = Double.POSITIVE_INFINITY;
-            if(g_score + hScoreMap.get(newGoal) < pathToCost.get(counter))
+            Double h_score = hScoreMap.get(newGoal);
+            if(g_score + h_score < pathToCost.get(counter))
                 hScoreMap.put(newGoal, pathToCost.get(counter) - gScoreMap.get(newGoal));
             deltah.put(counter+1, deltah.get(counter) + hScoreMap.get(newGoal));
         }else deltah.put(counter+1, deltah.get(counter));

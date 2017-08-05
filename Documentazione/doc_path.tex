@@ -14,8 +14,9 @@ N86001092}
 \usepackage{amsfonts}
 % or
 \usepackage{amssymb}
-
+\usepackage{tikz}
 \usepackage{amsmath}
+\usepackage{subcaption}
 \begin{document}
 
 \maketitle
@@ -25,7 +26,7 @@ N86001092}
 \chapter{Introduzione}
 
 Un gioco grid-based (o tile-based) \`e un tipo di videogioco dove l'area di gioco consiste in una matrice di locazioni quadrate dette \emph{tiles} che simulano una veduta dall'alto di una regione bidimensionale. L'insieme dei tile disponibili \`e chiamato \emph{tileset}. In particolare, una mappa consiste in una griglia di larghezza e di altezza fissate ed ogni tile pu\`o essere traversabile o bloccato. L'insieme delle possibili locazioni traversabili \`e rappresentato mediante un grafo indiretto.  I \emph{tile} sono disposti in maniera adiacente l'uno dall'altro nella griglia. \par Nel progetto proposto ci si \`e serviti di mappe \emph{grid-based} generate in modo casuale a seconda della tipologia desiderata.\par Ogni \emph{tile} traversabile della mappa corrisponde ad un nodo nel grafo corrispondente. Un nodo, che corrisponde ad una locazione traversabile \`e connesso a tutti i nodi associati ai tile adiacenti e traversabili. I pesi degli archi che corrispondono a spostamenti ortogonali hanno costo unitario, gli archi tra due nodi collegati diagonalmente hanno un costo $\sqrt{2}$. \par Per riferirsi a un nodo del grafo partendo dalle sue coordinate sulla grigla e viceversa si usano le usuali formule di conversioni:
-date le coordinate geometriche x e y di una locazione, il nodo corrispondente avra\`a come identificativo \begin{equation} nodo = y*\mbox{MAP\_WIDTH} + x \end{equation} dove \emph{MAP\_WIDTH} si intende la larghezza della mappa. Per riottenere invece le coordinate geometriche di un nodo si utilizzano le seguenti formule: \begin{equation} x = nodo \% \mbox{MAP\_WIDTH} \end{equation} \begin{equation} y = nodo / \mbox{MAP\_WIDTH} \end{equation} 
+date le coordinate geometriche x e y di una locazione, il nodo corrispondente avr\`a come identificativo \begin{equation} nodo = y*\mbox{MAP\_WIDTH} + x \end{equation} dove \emph{MAP\_WIDTH} si intende la larghezza della mappa. Per riottenere invece le coordinate geometriche di un nodo si utilizzano le seguenti formule: \begin{equation} x = nodo \% \mbox{MAP\_WIDTH} \end{equation} \begin{equation} y = nodo / \mbox{MAP\_WIDTH} \end{equation} 
 Considerando le tipiche mappe dei retro game sono state considerate tre diverse tipologie di generazione che andremo a discutere qui in seugito.
 
 
@@ -67,7 +68,7 @@ L'implementazione canonica di Dijkstra termina quando la coda \`e vuota, ossia, 
 Una volta raggiunto il nodo di arrivo, viene estratto il cammino percorrendo a ritroso tutte le connessioni usate per arrivare a quel nodo fino a raggiungere il nodo di partenza.
 }
 
-\begin{algorithm}
+\begin{algorithm}[h]
 \PrintSemicolon
 \caption{Dijkstra Shortest Path}
   \LinesNumbered
@@ -292,47 +293,6 @@ La soluzione tipica a questo problema \`e di applicare una funzione di \emph{pat
 \end{figure}
 }
 
-
-\par{
-L'algoritmo Theta* risolve queste problematiche. Essendo una variante di A*, similmente propaga le informazioni lungo gli archi del grafo ma senza vincolare i percorsi trovati ad essi (i percorsi con questa caratteristica soo detti "\emph{any-angle}"). 
-Similmente ad A*, Theta* \`e di facile implementazione ed efficiente (ha un runtime simile ad A*) ed inoltre calcola percorsi pi\`u "realistici", senza il bisogno di alcun processo postumo di \emph{path-smoothing.} 
-}
-\par{
-Theta* combina due importanti propriet\`a che concernono il \emph{path-planning}: 
-
-
-\begin{itemize}
-\item \textbf{Grafi di Visibilit\`a}: contengono il nodo di partenza, il nodo di arrivo, e gli spigoli di tutte le celle bloccate. Un nodo \`e connesso in linea retta ad un altro nodo se e solo se sono in linea di visibilit\`a (\emph{line-of-sight}) l'uno con l'altro, ossia, se non c'\`e alcuna cella bloccata lungo la linea retta che congiunge i due nodi. I cammini minimi sui grafi di visibilit\`a sono tali anche in un ambiente continuo, ma purtroppo il \emph{path-finding} su di essi \`e inefficiente perch\`e il numero di archi pu\`o essere quadratico rispetto il numero di celle.
-\item \textbf{Griglie}: il \emph{path-finding} su di esse \`e pi\`u veloce rispetto i grafi di visibilit\`a perch\`e il numero di archi \`e lineare sul numero di celle. Tuttavia i percorsi basate sugli archi delle griglie possono essere non-ottimali e dall'aspetto non-realistico.
-\end{itemize}}
-
-\begin{algorithm}
-\PrintSemicolon
-\caption{Theta* Shortest Path}
-  \LinesNumbered
-%This is to hide Begin keyword
-\setcounter{AlgoLine}{32}
- \Fn{ComputeCost(u, v)}{
- \If{$\textbf{LineOfSight}(\textbf{parent}(u), v)$}{ \label{if2}
- 	\If{$\textbf{g}(\textbf{parent}(u)) + \textbf{c}(\textbf{parent}(u), v) \textless \textbf{g}(v)$}{
- 	$parent(v) \longleftarrow parent(u)$\;
- 	$g(v) \longleftarrow \textbf{g}(\textbf{parent}(u)) + \textbf{c}(\textbf{parent}(u), v)$
- 	;
- 	}
- }
- \Else{
- \If{$\textbf{g}(u) + \textbf{c}(u, v) $\textless$ \textbf{g}(v) $}{ \label{if1}
- 	$\textbf{g}(v) \longleftarrow \textbf{g}(u) + \textbf{c}(u, v)$\;
- 	$\textbf{parent}(v) \longleftarrow u$\;}
- 	}
- }
-\end{algorithm}
-
-\par{
-La differenza principale tra Theta* e  A* \`e che Theta* permette che il predecessore di un nodo sia un qualsiasi nodo, diversamente da A* che vincola il predecessore ad essere strettamente un nodo adiacente. La procedura principale e \emph{UpdateVertex}() sono del tutto simili ad A*, pertanto sono state omesse. Theta* \`e del tutto identico ad A* salvo per la procedure \emph{ComputeCost}(), che aggiorna il valore \emph{g}() e il predecessore \emph{parent}() di un nodo non ancora espanso seguendo due possibili path:
-\begin{itemize}
-\item \textbf{Path 1}: per permettere percorsi \emph{any-angle}, Theta* considera il percorso dal nodo di partenza al predecessore del nodo \emph{u} (\emph{parent(u)} [ \emph{= g(parent(u))}] e dal predecessore del nodo \emph{u} al nodo \emph{v} in linea retta [ \emph{= c(parent(u), v)}] se e solo se i nodi \emph{v} e \emph{parent(u)} sono in linea di visibilit\`a (Linea \ref{if2}). Il principio che c'\`e dietro questa considerazione \`e che il Path 1 non \`e pi\`u lungo del Path 2 per la \textbf{disuguaglianza triangolare} se il nodo \emph{v} \`e in linea di visibilit\`a con \emph{parent(u)}.
-\item \textbf{Path 2}: come visto in A*, Theta* considera il percorso dal nodo di partenza al nodo \emph{u} [= \emph{g(u)}] e dal nodo \emph{u} in linea retta [ \emph{= c(u,v)}] ad un nodo adiacente \emph{v}, risultante in un percorso di lunghezza g(u) + c(u,v) (Linea \ref{if1})
 \begin{algorithm}
 \PrintSemicolon
 \caption{Line of Sight pt. 1}
@@ -426,6 +386,48 @@ $x_{offset} \leftarrow -1$\;
 	\Return{true}
 	}
  \end{algorithm}
+
+\par{
+L'algoritmo Theta* risolve queste problematiche. Essendo una variante di A*, similmente propaga le informazioni lungo gli archi del grafo ma senza vincolare i percorsi trovati ad essi (i percorsi con questa caratteristica soo detti "\emph{any-angle}"). 
+Similmente ad A*, Theta* \`e di facile implementazione ed efficiente (ha un runtime simile ad A*) ed inoltre calcola percorsi pi\`u "realistici", senza il bisogno di alcun processo postumo di \emph{path-smoothing.} 
+}
+\par{
+Theta* combina due importanti propriet\`a che concernono il \emph{path-planning}: 
+
+
+\begin{itemize}
+\item \textbf{Grafi di Visibilit\`a}: contengono il nodo di partenza, il nodo di arrivo, e gli spigoli di tutte le celle bloccate. Un nodo \`e connesso in linea retta ad un altro nodo se e solo se sono in linea di visibilit\`a (\emph{line-of-sight}) l'uno con l'altro, ossia, se non c'\`e alcuna cella bloccata lungo la linea retta che congiunge i due nodi. I cammini minimi sui grafi di visibilit\`a sono tali anche in un ambiente continuo, ma purtroppo il \emph{path-finding} su di essi \`e inefficiente perch\`e il numero di archi pu\`o essere quadratico rispetto il numero di celle.
+\item \textbf{Griglie}: il \emph{path-finding} su di esse \`e pi\`u veloce rispetto i grafi di visibilit\`a perch\`e il numero di archi \`e lineare sul numero di celle. Tuttavia i percorsi basate sugli archi delle griglie possono essere non-ottimali e dall'aspetto non-realistico.
+\end{itemize}}
+
+\begin{algorithm}
+\PrintSemicolon
+\caption{Theta* Shortest Path}
+  \LinesNumbered
+%This is to hide Begin keyword
+\setcounter{AlgoLine}{32}
+ \Fn{ComputeCost(u, v)}{
+ \If{$\textbf{LineOfSight}(\textbf{parent}(u), v)$}{ \label{if2}
+ 	\If{$\textbf{g}(\textbf{parent}(u)) + \textbf{c}(\textbf{parent}(u), v) \textless \textbf{g}(v)$}{
+ 	$parent(v) \longleftarrow parent(u)$\;
+ 	$g(v) \longleftarrow \textbf{g}(\textbf{parent}(u)) + \textbf{c}(\textbf{parent}(u), v)$
+ 	;
+ 	}
+ }
+ \Else{
+ \If{$\textbf{g}(u) + \textbf{c}(u, v) $\textless$ \textbf{g}(v) $}{ \label{if1}
+ 	$\textbf{g}(v) \longleftarrow \textbf{g}(u) + \textbf{c}(u, v)$\;
+ 	$\textbf{parent}(v) \longleftarrow u$\;}
+ 	}
+ }
+\end{algorithm}
+
+\par{
+La differenza principale tra Theta* e  A* \`e che Theta* permette che il predecessore di un nodo sia un qualsiasi nodo, diversamente da A* che vincola il predecessore ad essere strettamente un nodo adiacente. La procedura principale e \emph{UpdateVertex}() sono del tutto simili ad A*, pertanto sono state omesse. Theta* \`e del tutto identico ad A* salvo per la procedure \emph{ComputeCost}(), che aggiorna il valore \emph{g}() e il predecessore \emph{parent}() di un nodo non ancora espanso seguendo due possibili path:
+\begin{itemize}
+\item \textbf{Path 1}: per permettere percorsi \emph{any-angle}, Theta* considera il percorso dal nodo di partenza al predecessore del nodo \emph{u} (\emph{parent(u)} [ \emph{= g(parent(u))}] e dal predecessore del nodo \emph{u} al nodo \emph{v} in linea retta [ \emph{= c(parent(u), v)}] se e solo se i nodi \emph{v} e \emph{parent(u)} sono in linea di visibilit\`a (Linea \ref{if2}). Il principio che c'\`e dietro questa considerazione \`e che il Path 1 non \`e pi\`u lungo del Path 2 per la \textbf{disuguaglianza triangolare} se il nodo \emph{v} \`e in linea di visibilit\`a con \emph{parent(u)}.
+\item \textbf{Path 2}: come visto in A*, Theta* considera il percorso dal nodo di partenza al nodo \emph{u} [= \emph{g(u)}] e dal nodo \emph{u} in linea retta [ \emph{= c(u,v)}] ad un nodo adiacente \emph{v}, risultante in un percorso di lunghezza g(u) + c(u,v) (Linea \ref{if1})
+
 \end{itemize}
 }
 \par{I controlli della linee di visibilit\`a possono essere effettuati in modo efficiente con operazioni aritmetiche di soli interi su griglie quadrate. L'algoritmo usato esegue questi controlli con un metodo standard di \emph{line-drawing} molto comune nelle applicazioni di \emph{computer grafica}.}
@@ -520,7 +522,7 @@ public static boolean lineOfSight(int x1, int y1, int x2, int y2) {
 \end{itemize}}
 \par{
 L'idea del \emph{bidirectional search} pu\`o dimezzare il tempo di ricerca di un algoritmo effettuando una ricerca in \emph{forward} e una in \emph{backward} simultaneamente. Quando le due frontiere di ricerca si intersecano, l'algoritmo pu\`o ricostruire il percorso seguito che va dal nodo di partenza, passando per il "nodo frontiera", al nodo di arrivo. Tuttavia per garantire miglioramenti sostanziali della ricerca occorre che le due ricerche opposte si incontrino a met\`a strada.}
-\par{Per dare l'idea generale dell'algoritmo proposto lo scomporremo nel seguente set di passi. Siano \emph{$Open_{f}$} e \emph{$Open_{b}$} rispettivamente le code di priorit\`a delle due ricerche in \emph{forward} e \emph{backward} e \emph{$Closed_f$} e \emph{$Closed_b$} i loro set \emph{Closed}, ed inoltre, sia $\alpha_{min}$ la lunghezza del percorso minimo dal nodo di partenza al nodo di arrivo (inizialmente inizializzato ad infinito):
+\par{Per dare l'idea generale dell'algoritmo proposto lo scomporremo nel seguente set di passi. Siano \emph{$Open_{f}$} e \emph{$Open_{b}$} rispettivamente le code di priorit\`a delle due ricerche in \emph{forward} e \emph{backward} aventi rispettivamente $f_{f_{min}}$ e $f_{b_{min}}$ come valori f() minimi, \emph{$Closed_f$} e \emph{$Closed_b$} i loro set \emph{Closed}, ed inoltre, sia $\alpha_{min}$ la lunghezza del percorso minimo dal nodo di partenza al nodo di arrivo (inizialmente inizializzato ad infinito):
 
 \begin{enumerate}
 \item Inizializza i nodi di \emph{start} e di \emph{goal}. Inserisci il nodo start e il nodo goal rispettivamente in \emph{$Open_f$} e in \emph{$Open_b$}.
@@ -644,7 +646,7 @@ update the increased\\ action cost (if any)
 \par{Visto che il valore \emph{g()} del nodo $s_{goal}$ \`e sempre uguale al valore \emph{f()} del nodo $s_{goal}$ (solo con euristiche consistenti), il valore \emph{f()} di un nodo \emph{s} \`e inferiore del valore \emph{f()} del nodo $s_{goal}$ durante la ricerca \emph{search(s)}. Pertanto, il nodo \emph{s} deve essere stato espanso durante la ricerca \emph{search(s)}. L'algoritmo pertanto aggiorna il valore \emph{h(s)} a $pathcost(search(s)) - g(s)$ (linea \ref{alg:aa7}). L'algoritmo corregge infine il valore \emph{h(s)} secondo il nodo $s_{goal}$ corrente nel caso il target si sia spostato dall'ultima volta che il nodo \emph{s} \`e stato inizializzato dalla procedura \emph{InitializeState(s)} (linee \ref{alg:aa8} e \ref{alg:aa9}).}
 \par{Spiegher\`o di seguito nel dettaglio come \emph{Lazy MT-Adaptive A*} corregge il valore h(s): dopo ogni ricerca, se il \emph{target} si \`e mosso e quindi il nodo $s_{goal}$ non \`e pi\`u lo stesso, la correzione per il nodo di arrivo della ricerca corrente diminuisce i valori \emph{h} di tutti i nodi del valore \emph{h()} del nodo di arrivo della ricerca corrente. Tale nuovo valore \emph{h()} viene prima calcolato (linee \ref{alg:aa10}-\ref{alg:aa11}) e in seguito aggiunto alla somma corrente di tutte le correzioni (linea \ref{alg:aa12}). Nello specifico, il valore di \emph{deltah(x)} durante la \emph{x}-esima ricerca \`e uguale alla somma corrente di tutte le correzioni fino all'inizio della \emph{x}-esima ricerca. Pertanto se \emph{h(s)} \`e stato inizializzato in una ricerca precedente ma non in quella corrente ($search(s) \neq counter$), allora la procedura \emph{InitializeState(s)} corregge il valore \emph{h(s)} con la somma di tutte le correzioni delle ricerche tra le quali il nodo \emph{s} \`e stato inizializzato e la ricerca corrente, che \`e uguale alla differenza tra i valori \emph{deltah()} durante la ricerca corrente (\emph{deltah(counter)}) e durante la ricerca \emph{search(s)} (\emph{deltah(search(s))}). In sintesi, il fattore di correzione \`e uguale a $deltah(counter) - deltah(search(s))$ (linea \ref{alg:aa8}). In seguito viene scelto il massimo tra questo valore e il valore \emph{h()} fornito dall'utente (linea \ref{alg:aa9}), in linea con il nuovo nodo di arrivo rispetto la ricerca corrente.}
 \par{In questo modo, Lazy MT-Adaptive A* aggiorna e corregge i valori \emph{h()} di tutti i nodi solo nel caso in cui sono richiesti nelle future ricerche (approccio \emph{lazy}), che \`e computazionalmente meno costoso rispetto ad aggiornare i valori \emph{h()} di tutti i nodi espansi dopo ogni ricerca e di correggere i valori \emph{h()} di tutti i nodi espansi dopo ogni ricerca dove il nodo di arrivo \`e cambiato (approccio \emph{eager}).}
-\par{ Useremo di seguito un esempio per mostrare il comportamento di LMAA*.
+\iffalse \par{ Useremo di seguito un esempio per mostrare il comportamento di LMAA*.
 \begin{figure}[htp]
 \centering
 \includegraphics[scale=0.30]{/home/notsaved/legend.png}
@@ -661,11 +663,407 @@ update the increased\\ action cost (if any)
 \par{La Figura \ref{img9}(a) mostra la prima ricerca di LMTAA* dal nodo corrente dell'agent D2 al nodo corrente del target C4. I nodi espansi sono colorati in grigio. Si noti che nell'immagine \`e stato introdotto un \emph{tie-breaker} che favorisce, tra i nodi con lo stesso valore \emph{f()}, quelli con il maggior valore \emph{g()}. Dopo la prima ricerca (come mostrato nella Figura\ref{img9}(b)), l'agent si muove lungo il percorso trovato finch\`e non arriva al nodo B1, dove scopre che il nodo B2 \`e bloccato e che il target si \`e spostato dal nodo C4 al nodo C3.}
 \par{Dal momento in cui il nodo di arrivo adesso non \`e pi\`u sul path calcolato in precedenza, l'agent esegue una seconda ricerca per ricalcolare un nuovo percorso dal suo nodo corrente B1 al nuovo nodo di arrivo C3. Si noti che in seguito al cambiamento del nodo di arrivo, l'algoritmo non ha corretto i valori \emph{h()} di tutti i nodi espansi. Invece calcola soltanto \emph{h}(C3) (= 1) (linee \ref{alg:aa10}-\ref{alg:aa11}), ossia il valore \emph{h()} del nodo di arrivo della seconda ricerca rispetto al nodo di arrivo della prima ricerca, e in seguito somma h(C3) a deltah(1) (linea \ref{alg:aa12}), risultando in deltah(2) = 1 (Figura \ref{img9}(c)), che sar\`a usato per correggere i valori \emph{h()} dei nodi che verranno espansi nelle future ricerche.}
 \par{La Figura \ref{img9}(d) mostra la seconda ricerca. L'algoritmo a questo punto avr\`a aggiornato e corretto i valori \emph{h()} dei nodi espansi solo nel momento in cui sono stati espansi. Ad esempio il nodo D2 non \`e stato aggiornato perch\`e non \`e stato selezionato nella seconda ricerca e pertanto il suo valore \emph{h()} rimarr\`a invariato per questa ricerca. }
+\fi
 
+\newcommand{\populateCell}[5]{
+\node at (#1 +.14, #2 +.8) {\small$#3$};
+\node at (#1 +.8,#2 +.8) {$#4$};
+\node at (#1 +.14,#2 +.2) {$#5$};
+}
+
+\par{ Nei seguenti esempi si prover\`a a dare una idea del comportamento dell'algoritmo LMTAA*, evidenziando i vantaggi che esso offre, rispetto al tradizionale A*.
+Da tenere a mente che nei seguenti esempi \`e stata usata la distanza di Manhattan come funzione euristica e che sono stati ammessi solo spostamenti ortogonali nella griglia. In figura \ref{fig:legenda} vi \`e una legenda che indica come interpretare ogni cella dell'esempio. Inoltre le celle in grigio indicano che quel nodo \`e stato esplorato nella \emph{counter}-esima ricerca. Inoltre va ricodato che LMTAA* \`e un algoritmo euristico incrementale. Ci\`o significa che dovremo simulare pi\`u iterazioni finch\`e le euristiche non diventino abbastanza informate e al fine di rendere visibili dei concreti vantaggi.
+}\par{In figura \ref{fig:AA1} vi \`e una simulazione di una tipica situazione che potrebbe capitare su un terreno di gioco. La prima ricerca di LMTAA* non \`e diversa da una normale ricerca di A*.} 
+\begin{figure}[h]
+\centering
+\begin{tikzpicture}[scale=1, transform shape]
+\draw (0,0) rectangle (2,2);
+\node at (0.66,0.3) {\textbf{search}};
+\node at (0.36,1.6) {\textbf{g}};
+\node at (1.6,1.6) {\textbf{h}};
+\end{tikzpicture}
+\caption{Legenda}
+\label{fig:legenda}
+\end{figure}
+
+
+\begin{figure}[H]
+\centering
+\begin{tikzpicture}[scale = 1, transform shape]
+\fill [black!20!white] (0,0) rectangle  (6,6);
+\fill [black!20!white] (7,3) rectangle  (6,6);
+\fill [black!20!white] (7,3) rectangle  (8,6);
+    \draw[step=1cm,black,thin] (0,0) grid (9,6);
+    \foreach \xtick in {0,...,8} {\pgfmathsetmacro\result{\xtick * 1} \node at (\xtick+0.5, -.5) {\pgfmathprintnumber{\result}}; }
+    \foreach \ytick in {5,4,3,2,1,0} {\pgfmathsetmacro\result{\ytick * 1} \node at (-.5,\ytick+0.5) {\pgfmathprintnumber{\result}}; }
+    %\foreach \x/\y in {.5/2.5, 1.5/.5, 2.5/4.5, 3.5/1.5, 4.5/3.5}{\draw [fill=black, thin] (\x,\y);}
+\fill[black] (6,0) rectangle (7,5);
+\node at (+0.5, +1.5) {\textbf{s}};
+\node at (7.5, 2.5) {\textbf{g}};
+
+\populateCell{0}{1}{0}{8}{1}
+\populateCell{0}{0}{1}{9}{1}
+\populateCell{1}{0}{2}{8}{1}
+\populateCell{2}{0}{3}{7}{1}
+\populateCell{3}{0}{4}{6}{1}
+\populateCell{4}{0}{5}{6}{1}
+\populateCell{5}{0}{6}{4}{1}
+\populateCell{1}{1}{1}{7}{1}
+\populateCell{2}{1}{2}{6}{1}
+\populateCell{3}{1}{3}{5}{1}
+\populateCell{4}{1}{4}{4}{1}
+\populateCell{5}{1}{5}{3}{1}
+\populateCell{0}{2}{1}{7}{1}
+\populateCell{1}{2}{2}{6}{1}
+\populateCell{2}{2}{3}{5}{1}
+\populateCell{3}{2}{4}{4}{1}
+\populateCell{4}{2}{5}{3}{1}
+\populateCell{5}{2}{6}{2}{1}
+\populateCell{0}{3}{2}{8}{1}
+\populateCell{1}{3}{3}{7}{1}
+\populateCell{2}{3}{4}{6}{1}
+\populateCell{3}{3}{5}{5}{1}
+\populateCell{4}{3}{6}{4}{1}
+\populateCell{5}{3}{7}{3}{1}
+\populateCell{0}{4}{3}{9}{1}
+\populateCell{1}{4}{4}{8}{1}
+\populateCell{2}{4}{5}{7}{1}
+\populateCell{3}{4}{6}{6}{1}
+\populateCell{4}{4}{7}{5}{1}
+\populateCell{5}{4}{8}{4}{1}
+\populateCell{0}{5}{4}{10}{1}
+\populateCell{1}{5}{5}{9}{1}
+\populateCell{2}{5}{6}{8}{1}
+\populateCell{3}{5}{7}{7}{1}
+\populateCell{4}{5}{8}{6}{1}
+\populateCell{5}{5}{9}{5}{1}
+\populateCell{6}{5}{10}{4}{1}
+\populateCell{7}{5}{11}{3}{1}
+\populateCell{8}{5}{12}{4}{1}
+\populateCell{8}{4}{13}{3}{1}
+\populateCell{7}{4}{12}{2}{1}
+\populateCell{7}{3}{13}{1}{1}
+\populateCell{8}{3}{14}{2}{1}
+\populateCell{7}{2}{14}{0}{1}
+\populateCell{8}{2}{}{}{1}
+\populateCell{8}{1}{}{}{1}
+\populateCell{8}{0}{}{}{1}
+\populateCell{8}{3}{}{}{1}
+\populateCell{7}{0}{}{}{1}
+\populateCell{7}{1}{}{}{1}
+
+\draw[black,thick,dashed] (0.5, 1.7) -- (0.5, 2.5);
+\draw[black,thick,dashed] (0.5, 2.5) -- (1.5, 2.5);
+\draw[black,thick,dashed] (1.5, 2.5) -- (5.5, 2.5);
+\draw[black,thick,dashed] (5.5, 2.5) -- (5.5, 5.5);
+\draw[black,thick,dashed] (5.5, 5.5) -- (7.5, 5.5);
+\draw[black,thick,dashed] (7.5, 5.5) -- (7.5, 2.7);
+
+
+
+\end{tikzpicture}   
+\caption[caption]{LMTAA*: termine iterazione 1\\\hspace{\textwidth}$counter = 1$\\\hspace{\textwidth}$pathcost(1) = 14$\\\hspace{\textwidth}$deltah(1) = 0$} \label{fig:AA1}
+\end{figure}
+\par{A fine ricerca viene memorizzato il costo del percorso trovato nel mapping $pathcost(1)$. A questo punto l'agent sorgente si muove lungo il percorso da (0,1) a (1,2).
+L'agent  target si muove da (7,2) a (8,3), uscendo fuori dal percorso che l'agent sorgente aveva calcolato.
+Quest'ultimo si vedr\`a dunque costretto a pianificare un nuovo percorso. La seconda iterazione \`e mostrata in figura \ref{fig:AA2}.} 
+\begin{figure}[H]
+\centering
+\begin{tikzpicture}
+
+\fill [black!20!white] (1,0) rectangle  (6,6);
+\fill [black!20!white] (0,2) rectangle  (1,5);
+\fill [black!20!white] (4,5) rectangle  (9,6);
+\fill [black!20!white] (7,4) rectangle  (9,5);
+
+    \draw[step=1cm,black,thin] (0,0) grid (9,6);
+    \foreach \xtick in {0,...,8} {\pgfmathsetmacro\result{\xtick * 1} \node at (\xtick+0.5, -.5) {\pgfmathprintnumber{\result}}; }
+    \foreach \ytick in {5,4,3,2,1,0} {\pgfmathsetmacro\result{\ytick * 1} \node at (-.5,\ytick+0.5) {\pgfmathprintnumber{\result}}; }
+    %\foreach \x/\y in {.5/2.5, 1.5/.5, 2.5/4.5, 3.5/1.5, 4.5/3.5}{\draw [fill=black, thin] (\x,\y);}
+\fill[black] (6,0) rectangle (7,5);
+
+
+\node at (+1.5, +2.5) {\textbf{s}};
+\node at (8.5, 3.5) {\textbf{g}};
+
+\populateCell{0}{1}{2}{12}{2}
+\populateCell{0}{0}{3}{11}{2}
+\populateCell{1}{0}{2}{10}{2}
+\populateCell{2}{0}{3}{9}{2}
+\populateCell{3}{0}{4}{8}{2}
+\populateCell{4}{0}{5}{7}{2}
+\populateCell{5}{0}{6}{6}{2}
+\populateCell{1}{1}{2}{11}{2}
+\populateCell{2}{1}{2}{10}{2}
+\populateCell{3}{1}{3}{9}{2}
+\populateCell{4}{1}{4}{8}{2}
+\populateCell{5}{1}{5}{7}{2}
+\populateCell{0}{2}{1}{11}{2}
+\populateCell{1}{2}{0}{10}{2}
+\populateCell{2}{2}{1}{9}{2}
+\populateCell{3}{2}{2}{8}{2}
+\populateCell{4}{2}{3}{7}{2}
+\populateCell{5}{2}{4}{6}{2}
+\populateCell{0}{3}{2}{10}{2}
+\populateCell{1}{3}{1}{9}{2}
+\populateCell{2}{3}{2}{8}{2}
+\populateCell{3}{3}{3}{7}{2}
+\populateCell{4}{3}{4}{6}{2}
+\populateCell{5}{3}{5}{5}{2}
+\populateCell{0}{4}{3}{9}{2}
+\populateCell{1}{4}{2}{8}{2}
+\populateCell{2}{4}{3}{7}{2}
+\populateCell{3}{4}{4}{6}{2}
+\populateCell{4}{4}{5}{5}{2}
+\populateCell{5}{4}{6}{4}{2}
+\populateCell{0}{5}{4}{10}{2}
+\populateCell{1}{5}{3}{7}{2}
+\populateCell{2}{5}{4}{8}{2}
+\populateCell{3}{5}{5}{7}{2}
+\populateCell{4}{5}{6}{6}{2}
+\populateCell{5}{5}{7}{5}{2}
+\populateCell{6}{5}{8}{4}{2}
+\populateCell{7}{5}{9}{3}{2}
+\populateCell{8}{5}{10}{2}{2}
+\populateCell{8}{4}{11}{1}{2}
+\populateCell{7}{4}{10}{2}{2}
+\populateCell{7}{3}{11}{1}{2}
+\populateCell{8}{3}{12}{0}{2}
+\populateCell{7}{2}{14}{0}{1}
+\populateCell{8}{2}{}{}{1}
+\populateCell{8}{1}{}{}{1}
+\populateCell{8}{0}{}{}{1}
+\populateCell{7}{0}{}{}{1}
+\populateCell{7}{1}{}{}{1}
+
+
+
+\draw[black,thick,dashed] (1.7, 2.5) -- (5.5, 2.5);
+\draw[black,thick,dashed] (5.5, 2.5) -- (5.5, 5.5);
+\draw[black,thick,dashed] (5.5, 5.5) -- (8.5, 5.5);
+\draw[black,thick,dashed] (8.5, 5.5) -- (8.5, 3.7);
+
+
+
+
+\end{tikzpicture}   
+\caption[caption]{LMTAA*: termine iterazione 2\\\hspace{\textwidth}$counter = 2$\\\hspace{\textwidth}$pathcost(2) = 12$\\\hspace{\textwidth}$deltah(2) = 2$} \label{fig:AA2}
+\end{figure}
+
+\par{Neanche qui sono visibili grandi vantaggi, a parte il fatto che le euristiche cominciano ad essere maggiormente accurate. Ci\`o vuol dire che ogni nodo sa con maggior precisione quanto dista dal nodo di goal. Pi\`u tale stima \`e accurata, minori saranno i nodi esplorati dalle ricerche future. A questo punto l'agent $s$ si muove da (1,2) a (2,2). L'agent $g$ si muove da (8,3) a (7,3). L'agent $s$ dovr\`a pianificare un nuovo percorso per la terza volta. In figura \ref{fig:AA3} \`e mostrata la terza iterazione di LMTAA*.}
+\begin{figure}[H]
+\centering
+\begin{tikzpicture}
+
+\fill [black!20!white] (2,0) rectangle  (6,6);
+\fill [black!20!white] (6,4) rectangle  (8,6);
+
+
+    \draw[step=1cm,black,thin] (0,0) grid (9,6);
+    \foreach \xtick in {0,...,8} {\pgfmathsetmacro\result{\xtick * 1} \node at (\xtick+0.5, -.5) {\pgfmathprintnumber{\result}}; }
+    \foreach \ytick in {5,4,3,2,1,0} {\pgfmathsetmacro\result{\ytick * 1} \node at (-.5,\ytick+0.5) {\pgfmathprintnumber{\result}}; }
+    %\foreach \x/\y in {.5/2.5, 1.5/.5, 2.5/4.5, 3.5/1.5, 4.5/3.5}{\draw [fill=black, thin] (\x,\y);}
+\fill[black] (6,0) rectangle (7,5);
+
+
+\node at (+2.5, +2.5) {\textbf{s}};
+\node at (7.5, 3.5) {\textbf{g}};
+
+\populateCell{0}{1}{2}{12}{2}
+\populateCell{0}{0}{3}{11}{2}
+\populateCell{1}{0}{3}{9}{3}
+\populateCell{2}{0}{2}{8}{3}
+\populateCell{3}{0}{3}{7}{3}
+\populateCell{4}{0}{4}{6}{3}
+\populateCell{5}{0}{5}{5}{3}
+\populateCell{1}{1}{2}{11}{3}
+\populateCell{2}{1}{1}{9}{3}
+\populateCell{3}{1}{2}{8}{3}
+\populateCell{4}{1}{3}{7}{3}
+\populateCell{5}{1}{4}{6}{3}
+\populateCell{0}{2}{1}{11}{2}
+\populateCell{1}{2}{1}{11}{3}
+\populateCell{2}{2}{0}{10}{3}
+\populateCell{3}{2}{1}{9}{3}
+\populateCell{4}{2}{2}{8}{3}
+\populateCell{5}{2}{3}{7}{3}
+\populateCell{0}{3}{2}{10}{2}
+\populateCell{1}{3}{2}{10}{3}
+\populateCell{2}{3}{1}{9}{3}
+\populateCell{3}{3}{2}{8}{3}
+\populateCell{4}{3}{3}{7}{3}
+\populateCell{5}{3}{4}{6}{3}
+\populateCell{0}{4}{3}{9}{2}
+\populateCell{1}{4}{3}{9}{3}
+\populateCell{2}{4}{2}{8}{3}
+\populateCell{3}{4}{3}{7}{3}
+\populateCell{4}{4}{4}{6}{3}
+\populateCell{5}{4}{5}{5}{3}
+\populateCell{0}{5}{4}{10}{2}
+\populateCell{1}{5}{4}{8}{3}
+\populateCell{2}{5}{3}{7}{3}
+\populateCell{3}{5}{4}{6}{3}
+\populateCell{4}{5}{5}{5}{3}
+\populateCell{5}{5}{6}{4}{3}
+\populateCell{6}{5}{7}{3}{3}
+\populateCell{7}{5}{8}{2}{3}
+\populateCell{8}{5}{9}{3}{3}
+\populateCell{8}{4}{10}{2}{3}
+\populateCell{7}{4}{9}{1}{3}
+\populateCell{7}{3}{10}{0}{3}
+\populateCell{8}{3}{12}{0}{2}
+\populateCell{7}{2}{14}{0}{1}
+\populateCell{8}{2}{}{}{1}
+\populateCell{8}{1}{}{}{1}
+\populateCell{8}{0}{}{}{1}
+\populateCell{7}{0}{}{}{1}
+\populateCell{7}{1}{}{}{1}
+
+
+
+\draw[black,thick,dashed] (2.7, 2.5) -- (5.5, 2.5);
+\draw[black,thick,dashed] (5.5, 2.5) -- (5.5, 5.5);
+\draw[black,thick,dashed] (5.5, 5.5) -- (7.5, 5.5);
+\draw[black,thick,dashed] (7.5, 5.5) -- (7.5, 3.7);
+
+
+
+
+\end{tikzpicture}   
+\caption[caption]{LMTAA*: termine iterazione 3\\\hspace{\textwidth}$counter = 3$\\\hspace{\textwidth}$pathcost(3) = 10$\\\hspace{\textwidth}$deltah(3) = 3$} \label{fig:AA3}
+\end{figure}
+\par{ A questo punto le euristiche sono abbastanza informate. Ogni nodo sa quasi esattamente quanto dista realmente dal nodo di arrivo. Solo in questa ultima iterazione, sono stati esplorati 27 nodi. Per rendere ben chiari i vantaggi di LMTAA* \`e stata mostrata, in figura \ref{fig:A3}, la stessa identica situazione di questa ultima iterazione con la differenza sostanziale che l'agent $s$ si avvale di A* tradizionale e quindi di euristiche \textbf{non} informate.}
+
+\begin{figure}[H]
+\centering
+\begin{tikzpicture}
+
+\fill [black!20!white] (0,2) rectangle  (6,4);
+\fill [black!20!white] (1,1) rectangle  (6,5);
+\fill [black!20!white] (2,0) rectangle  (6,6);
+\fill [black!20!white] (6,4) rectangle  (8,6);
+
+
+    \draw[step=1cm,black,thin] (0,0) grid (9,6);
+    \foreach \xtick in {0,...,8} {\pgfmathsetmacro\result{\xtick * 1} \node at (\xtick+0.5, -.5) {\pgfmathprintnumber{\result}}; }
+    \foreach \ytick in {5,4,3,2,1,0} {\pgfmathsetmacro\result{\ytick * 1} \node at (-.5,\ytick+0.5) {\pgfmathprintnumber{\result}}; }
+    %\foreach \x/\y in {.5/2.5, 1.5/.5, 2.5/4.5, 3.5/1.5, 4.5/3.5}{\draw [fill=black, thin] (\x,\y);}
+\fill[black] (6,0) rectangle (7,5);
+
+
+\node at (+2.5, +2.5) {\textbf{s}};
+\node at (7.5, 3.5) {\textbf{g}};
+
+\populateCell{0}{1}{3}{9}{3}
+\populateCell{0}{0}{}{}{2}
+\populateCell{1}{0}{3}{9}{3}
+\populateCell{2}{0}{2}{8}{3}
+\populateCell{3}{0}{3}{7}{3}
+\populateCell{4}{0}{4}{6}{3}
+\populateCell{5}{0}{5}{5}{3}
+\populateCell{1}{1}{2}{8}{3}
+\populateCell{2}{1}{1}{7}{3}
+\populateCell{3}{1}{2}{6}{3}
+\populateCell{4}{1}{3}{5}{3}
+\populateCell{5}{1}{4}{4}{3}
+\populateCell{0}{2}{2}{8}{3}
+\populateCell{1}{2}{1}{7}{3}
+\populateCell{2}{2}{0}{6}{3}
+\populateCell{3}{2}{1}{5}{3}
+\populateCell{4}{2}{2}{4}{3}
+\populateCell{5}{2}{3}{3}{3}
+\populateCell{0}{3}{3}{7}{3}
+\populateCell{1}{3}{2}{6}{3}
+\populateCell{2}{3}{1}{5}{3}
+\populateCell{3}{3}{2}{4}{3}
+\populateCell{4}{3}{3}{3}{3}
+\populateCell{5}{3}{4}{2}{3}
+\populateCell{0}{4}{4}{8}{3}
+\populateCell{1}{4}{3}{7}{3}
+\populateCell{2}{4}{2}{6}{3}
+\populateCell{3}{4}{3}{5}{3}
+\populateCell{4}{4}{4}{4}{3}
+\populateCell{5}{4}{5}{3}{3}
+\populateCell{0}{5}{}{}{2}
+\populateCell{1}{5}{4}{8}{3}
+\populateCell{2}{5}{3}{7}{3}
+\populateCell{3}{5}{4}{6}{3}
+\populateCell{4}{5}{5}{5}{3}
+\populateCell{5}{5}{6}{4}{3}
+\populateCell{6}{5}{7}{3}{3}
+\populateCell{7}{5}{8}{2}{3}
+\populateCell{8}{5}{9}{3}{3}
+\populateCell{8}{4}{10}{2}{3}
+\populateCell{7}{4}{9}{1}{3}
+\populateCell{7}{3}{10}{0}{3}
+\populateCell{8}{3}{}{}{2}
+\populateCell{7}{2}{}{}{1}
+\populateCell{8}{2}{}{}{1}
+\populateCell{8}{1}{}{}{1}
+\populateCell{8}{0}{}{}{1}
+\populateCell{7}{0}{}{}{1}
+\populateCell{7}{1}{}{}{1}
+
+
+
+\draw[black,thick,dashed] (2.7, 2.5) -- (5.5, 2.5);
+\draw[black,thick,dashed] (5.5, 2.5) -- (5.5, 5.5);
+\draw[black,thick,dashed] (5.5, 5.5) -- (7.5, 5.5);
+\draw[black,thick,dashed] (7.5, 5.5) -- (7.5, 3.7);
+
+
+
+
+\end{tikzpicture}   
+\caption[caption]{Plain A*: termine iterazione 3} \label{fig:A3}
+\end{figure}
+
+\par A* esplorerebbe 33 nodi, contro i 27 di LMTAA*. A causa delle modeste dimensioni di tale esempio non si pu\`o apprezzare una grande differenza, ma si pensi a situazioni in cui un agent deve ripianificare continuamente un percorso verso un altro agent in una griglia con dimensioni 100 volte maggiori e in cui il runtime di una singola ricerca \`e un fattore critico per il funzionamento del sistema. In questo caso un algoritmo di ricerca incrementale \`e senza dubbio preferibile per via del suo vantaggio di migliorare le proprie prestazioni al crescere delle iterazioni.
 \section{Trailmax}
 \label{sec:trailmax}
 
-DA SCRIVERE DA SCRIVERE DA SCRIVERE DA SCRIVERE DA SCRIVERE DA SCRIVERE DA SCRIVERE 
+\par{Il problema del \emph{moving target search} (noto anche come \emph{pursuit-evasion} o in italiano \emph{guardie e ladri}) \`e una famiglia di problemi gi\`a noti alla matematica e all'informatica, ed ha molte applicazioni in particolar modo ai videogiochi.
+}
+\par{Spesso nei videogiochi il giocatore controlla un ladro che deve sfuggire ad un poliziotto controllato da una intelligenza artificiale. Tuttavia non \`e raro che lo stesso gioco venga capovolto, ad esempio in modo che il giocatore controlli il poliziotto e il ladro controllato da una intelligenza artificiale cerchi di sfuggirgli.}
+\par{Visto che tutti gli algoritmi descritti fin'ora sono applicabili solo all'inseguimento, si \`e resa necessario lo sviluppo di un algoritmo che definisca una strategia di evasione per il target. In questo capitolo verr\`a dunque introdotto un algoritmo che risponde a questa esigenza, chiamato TrailMax\footnote{Evaluating Strategies for Running from the Cops, Carsten Moldenhauer
+and
+Nathan R. Sturtevant
+Department of Computer Science
+University of Alberta
+Edmonton, AB, Canada T6G 2E8}.
+}\par{Per semplicit\`a nella descrizione dell'algoritmo assumeremo che i due agent abbiano la stessa velocit\`a. Tuttavia tutte le seguenti definizioni sono estendibili anche a differenti velcit\`a. L'idea di fondo di questo algoritmo \`e che il target assume che l'inseguitore sappia in anticipo qual \`e il percorso migliore per raggiungerlo. Partendo da questa assunzione il target prova a massimizzare il tempo di cattura, scegliendo quindi un percorso che impiegher\`a all'inseguitore pi\`u tempo per raggiungere l'obiettivo.}
+\par{Il percorso di evasione \`e calcolato espandendo simultaneamente i nodi intorno alla posizione dell'inseguitore e del target utilizzando una variante dell'algoritmo di Dijkstra. Vi saranno pertanto due code di priorit\`a, una per l'inseguitore e una per il target. I nodi esplorati dal target sono confrontati con quelli esplorati dall'inseguitore al fine di controllare se l'inseguitore potrebbe gi\`a aver raggiunto quel nodo e catturato il target. Se \`e questo il caso, il nodo viene scartato. In caso contrario tale nodo appartiene alla copertura del target e pertanto espanso normalmente. Invece, i nodi presenti nella coda di priorit\`a dell'inseguitore sono sempre esplorati normalmente. Nella figura \ref{trailmaxexp} \`e mostrata una rappresentazione dell'espansione di TrailMax. L'area grigia contiene nodi che sono stati raggiunti per prima dal target, dichiarati come copertura del target, ma che non sono pi\`u stati espansi siccome sono stati catturati in seguito dall'inseguitore}
+\begin{figure}[htp]
+\centering
+\includegraphics[scale=0.80]{/home/notsaved/2017-08-03-214425_438x196_scrot.png}
+\caption{Visualizzazione della computazione di TrailMax.}
+\label{trailmaxexp}
+\end{figure}
+\par{L'algoritmo termina quando tutti i nodi appartenenti alla copertura del target sono espansi anche dall'inseguitore. L'ultimo nodo esplorato dall'inseguitore sar\`a il nodo che il target dovr\`a raggiungere. Il percorso viene generato percorrendo a ritroso tutte le connessioni usate per arrivare a tale nodo, fino a raggiungere il nodo di partenza.}
+\iffalse\begin{figure}[htp]
+\centering
+\includegraphics[scale=0.30]{/home/notsaved/theta2.png}
+\caption{Il percorso mostrato in verde \`e quello calcolato da Trailmax}
+\label{trail1}
+\end{figure}
+\fi
+
+\begin{figure}
+\begin{subfigure}{.5\textwidth}
+  \centering
+  \includegraphics[width=.8\linewidth]{/home/notsaved/theta2.png}
+  \caption{TrailMax su mappa outdoor}
+  \label{fig:sfig1}
+\end{subfigure}%
+\begin{subfigure}{.5\textwidth}
+  \centering
+  \includegraphics[width=.8\linewidth]{/home/notsaved/theta3.png}
+  \caption{TrailMax su mappa indoor}
+  \label{fig:sfig2}
+\end{subfigure}
+\caption{Le immagini mostrano il percorso calcolato da TrailMax (verde) che massimizza la distanza dall'agent inseguitore (Rosso)}
+\label{fig:fig}
+\end{figure}
 
 \chapter{Design ed Implementazione}
 Il class diagram dell'intera implementazione del progetto \`e mostrato nella figura \ref{classdiagram}. In questa sezione saranno oltre descritte le classi e i loro dettagli implementativi.
@@ -923,7 +1321,7 @@ La classe \emph{Trailmax} estende la classe astratta Pathfinder ed implementa un
 
 \chapter{Applicazioni e Risultati sperimentali}
 
-\par{In questo capitolo verranno messi a confronto i diversi algoritmi di pathfinding implementati e verranno descritti gli esperimenti condotti per la valutazione di questi ultimi. Gli esperimenti sono stati condotti su un PC Lenovo ThinkPad T430 con processore Quad-Core Intel(R) Core(TM) i5-3360M CPU @ 2.80GHz e 4GB di memoria disponibili.
+\par{In questo capitolo verranno messi a confronto i diversi algoritmi di pathfinding implementati e verranno descritti gli esperimenti condotti per la valutazione di questi ultimi. Prima della parte sperimentale descriver\`o la logica di generazione degli ambienti dove saranno condotti gli esperimenti.
 }
 
 \section{Le Mappe}
@@ -1217,11 +1615,66 @@ $\textbf{divide}(map, nx, ny, new\_width, new\_height, w < h)$\;
   
 \end{algorithm}
 
-\section{Moving Target Test}
-\par{Il test \`e stato condotto su 80 mappe casuali per ogni tipologia descritta. Su ogni singola mappa sono stati scelti casualmente 30 coppie di punti come nodi di partenza e nodi di arrivo rispettivamente raggiungibili tra loro. La tipologia di test adottata \`e di tipo \emph{moving target}, descritta qui di seguito. Nella cella di partenza viene posizionato un agent \emph{inseguitore}, il quale calcola un percorso verso l'agent posizionato nella cella di arrivo e si muove lungo quel percorso. A sua volta l'agent-target posizionato nella cella di arrivo calcola una via di fuga rispetto l'agent inseguitore con l'algoritmo Trailmax e si muove lungo tale percorso di evasione ma con una frequenza minore dell'agent inseguitore per garantire che l'agent-target venga raggiunto. In tal modo l'agent inseguitore \`e costretto a calcolare periodicamente un nuovo percorso ogni volta che l'agent-target si sposta lungo il suo percorso di fuga.Per gli algoritmi euristici \`e stata usata la octile distance come funzione euristica giacch\`e le mappe sul quale \`e stato condotto il test sono connesse in 8 direzioni. I risultati raccolti sono mostrati nella tabella \ref{tab:risultati}. Nelle parentesi quadre \`e riportata la deviazione standard della media del dato a cui si riferisce per dimostrare il significato statistico dei risultati.}
+\section{Setup sperimentale}
+\par{Gli esperimenti sono stati condotti sui 3 tipi di mappe descritti in questo capitolo. Per i 3 tipi di mappe precedentemente descritte sono state generate 80 esemplari casuali di dimensioni $128 \times 128$. Per ammortizzare la varianza l'esperimento verr\`a ripetuto 30 volte per ogni mappa, scegliendo casualmente 30 coppie di nodi. Tutte le mappe generate ammettono spostamenti in 8 direzioni, ed \`e stata pertanto utilizzata la octile distance come funzione euristica. Compareremo Lazy Moving Target Adaptive-A* con Bidirectional-A*, A* e Dijkstra. Gli esperimenti sono stati condotti su un PC Lenovo ThinkPad T430 con processore Quad-Core Intel(R) Core(TM) i5-3360M CPU @ 2.80GHz e 4GB di memoria disponibili.
+  }
+\iffalse
+\subsection{Stationary Test}
+
+In questo tipo di test viene calcolato un percorso tra ogni coppia di punti di ogni mappa generata, per ogni tipo di mappa. In ogni mappa, per ogni coppia di punti verr\`a calcolato un percorso con i 4 diversi algoritmi in esame. Per ogni percorso calcolato dall'algoritmo in esame vengono memorizzati due parametri: il tempo impiegato della ricerca effettuata e il numero di nodi esplorati in quella ricerca. Per ogni mappa, per ogni algoritmo viene calcolata la media delle celle esplorate e del tempo di ricerca impiegato sul numero di punti testati su quella mappa. La somma di queste medie sono rispettivamente il parametro (a) e (c) della figura \ref{tab:risultatiSta}. L'insieme delle medie delle celle esplorate e del tempo di ricerca viene mediato ulteriormente sul numero di mappe. Tali medie sono mostrate come parametri (b) e (d) nella figura \ref{tab:risultatiSta} delle quali riporteremo anche la deviazione standard per dimostrare il valore statistico di tale esperimento.
 
 \begin{table}[H]
-\caption {Risultati Sperimentali } \label{tab:risultati} 
+\caption {Risultati Stationary Target Test } \label{tab:risultatiSta} 
+\centering
+
+\resizebox*{1.2\textwidth}{!}{
+
+\begin{tabular}{c|c|c|c|c|} 
+
+\hline
+\multicolumn{4}{c}{\textbf{Mappe Indoor} [128 x 128]}\\
+\hline 
+	 & (a) & (b) & (c) & (d) \\
+\hline
+	\textbf{Dijkstra} & 556924.0 & 6961.55 [489.56] & 1583.58 & 19.794792 [16.21] \\
+\hline
+	\textbf{A\^*} & 309956.0 & 3874.45 [734.06] & 1468.85 & 18.360625 [17.25] \\
+\hline
+	\textbf{BidirectionalA\^*} & 441780.0 & 5522.25 [1037.84] & 1851.91 & 23.148958 [16.87]\\
+\hline
+	\textbf{LazyMovingTargetAdaptiveA\^*} & 304263.0 & 3803.28 [697.95] & 1245.11 & 15.563958 [15.36] \\ \hline 
+	\multicolumn{4}{c}{\textbf{Mappe Outdoor} [128 x 128]}\\
+\hline
+	\textbf{Dijkstra} & 3690 & 158622 & 14210668.0 [21984.60] & 96055.0 [1068.08] \\
+\hline
+	\textbf{A\^*} & 3029 & 158044 & 1416871.0 [4356.03] & 66850.0 [1015.22] \\
+\hline
+	\textbf{BidirectionalA\^*} & 2899 & 159232 & 1565886.0 [4763.25] & 43624.0 [874.76]\\
+\hline
+	\textbf{LazyMovingTargetAdaptiveA\^*} & 3005 & 157964 & 1405686.0 [4183.93] & 19893.0 [563.78]\\ \hline 
+		\multicolumn{4}{c}{\textbf{Mappe Dungeon} [128 x 128]}\\
+\hline
+	\textbf{Dijkstra} & 45422 & 197053 & 52522222.0 [233228.94] & 180432.0 [1415.26]\\
+\hline
+	\textbf{A\^*} & 37921 & 192708 & 6176276.0 [45504.01] & 60681.0 [908.87]\\
+\hline
+	\textbf{BidirectionalA\^*} & 40349 & 196231 & 7884858.0 [61489.88] & 78866.0 [1011.01]\\
+\hline
+	\textbf{LazyMovingTargetAdaptiveA\^*} & 39883 & 193277 & 5953568.0 [36799.00] & 38881.0 [722.78] \\ \hline 
+			\multicolumn{4}{c}{(a) = numero di celle esplorate;} \\ \multicolumn{4}{c}{(b) = media delle celle esplorate [deviazione standard della media];} \\ \multicolumn{4}{c}{(c) = totale tempo di ricerca (in millisecondi);} \\ \multicolumn{4}{c}{(d) = tempo medio di ricerca (in millisecondi) [deviazione standard della media];} \\ 
+
+\end{tabular}
+
+}
+
+\end{table}
+
+\fi
+\subsection{Moving Target Test}
+\par{In questo tipo di test viene posizionato un agent \emph{inseguitore} nella cella di partenza, il quale calcola un percorso verso l'agent posizionato nella cella di arrivo e si muove lungo quel percorso. A sua volta l'agent-target posizionato nella cella di arrivo calcola una via di fuga rispetto l'agent inseguitore con l'algoritmo Trailmax e si muove lungo tale percorso di evasione ma con una frequenza minore dell'agent inseguitore per garantire che l'agent-target venga raggiunto. In tal modo l'agent inseguitore \`e costretto a calcolare periodicamente un nuovo percorso ogni volta che l'agent-target si sposta lungo il suo percorso di fuga. Tutti gli algoritmi testati generano gli stessi percorsi e pertanto il numero di spostameti e di ricerche \`e approssimativamente lo stesso. Possono differire leggermente perch\`e l'agent target potrebbe calcolare diverse vie di fuga a parit\`a di punti di partenza e di arrivo. Riporteremo tre parametri per la valutazione dell'efficienza degli algoritmi testati, ossia il numero di celle esplorate (finch\`e il target non \`e raggiunto) e il tempo totale di ricerca (finch\`e il target non \`e raggiunto) e il tempo medio di ricerca. Per calcolare il tempo medio si divide il tempo totale di ricerca per il numero di ricerche. Nelle parentesi quadre \`e riportata anche la deviazione standard della media del dato a cui si riferisce per dimostrare il significato statistico dei risultati. Il modo pi\`u ragionevole per comparare questi algoritmi potrebbe essere usando il tempo medio di ricerca. Tuttavia esistono diversi fattori in grado di influenzare questo dato, tra i quali il set di istruzioni del processore a basso livello, le ottimizzazioni effettuate dal compilatore e \emph{coding decisions}. I risultati raccolti sono mostrati nella tabella \ref{tab:risultati}.}
+
+\begin{table}[H]
+\caption {Risultati Moving Target Test } \label{tab:risultati} 
 \centering
 
 \resizebox*{1.2\textwidth}{!}{
@@ -1233,31 +1686,31 @@ $\textbf{divide}(map, nx, ny, new\_width, new\_height, w < h)$\;
 \hline 
 	 & (a) & (b) & (c) & (d) & (e)\\
 \hline
-	\textbf{Dijkstra} & 52705 & 252779 & 79687387.0 [471724.54] & 250337.0 [1606.63] & 4.74\\
+	\textbf{Dijkstra} & 59998 & 325955 & 196985912 [1374079.83] & 457375 [3713.48] & 7.62\\
 \hline
-	\textbf{A\^*} & 50942 & 252021 & 29664860.0 [200887.14] & 181561.0 [1477.88] & 3.56\\
+	\textbf{A\^*} & 59527 & 325531 & 72426330 [738483.62] & 232646 [2201.19] & 3.90\\
 \hline
-	\textbf{BidirectionalA\^*} & 53682 & 257290 & 40574839.0 [280338.7] & 242255.0 [1984.92]& 4.51\\
+	\textbf{BidirectionalA\^*} & 61674 & 333168 & 96354496 [897852.14] & 318996 [3123.85]& 5.17\\
 \hline
-	\textbf{LazyMovingTargetAdaptiveA\^*} & 52842 & 252486 & 22442520.0 [138704.53] & 102767.0 [1095.78] & 1.94\\ \hline 
+	\textbf{LMTAA\^*} & 59850 & 325463 & 47225902 [467953.82] & 183409 [1906.68] & 3.06\\ \hline 
 	\multicolumn{5}{c}{\textbf{Mappe Outdoor} [128 x 128]}\\
 \hline
-	\textbf{Dijkstra} & 3690 & 158622 & 14210668.0 [21984.60] & 96055.0 [1068.08] & 26.03\\
+	\textbf{Dijkstra} & 33034 & 184782 & 75214932 [369453.94] & 137655 [1390.61] & 4.16\\
 \hline
-	\textbf{A\^*} & 3029 & 158044 & 1416871.0 [4356.03] & 66850.0 [1015.22] & 22.06\\
+	\textbf{A\^*} & 31283 & 182788 & 4713514 [22905.72] & 16403 [419.91] & 0.52\\
 \hline
-	\textbf{BidirectionalA\^*} & 2899 & 159232 & 1565886.0 [4763.25] & 43624.0 [874.76]& 15.04\\
+	\textbf{BidirectionalA\^*} & 31687 & 184195 & 5097733 [27219.57] & 18066 [509.82]& 0.57\\
 \hline
-	\textbf{LazyMovingTargetAdaptiveA\^*} & 3005 & 157964 & 1405686.0 [4183.93] & 19893.0 [563.78] & 6.61\\ \hline 
+	\textbf{LMTAA\^*} & 31507 & 182978 & 4656222 [22239.15] & 23478 [460.13] & 0.74\\ \hline 
 		\multicolumn{5}{c}{\textbf{Mappe Dungeon} [128 x 128]}\\
 \hline
-	\textbf{Dijkstra} & 45422 & 197053 & 52522222.0 [233228.94] & 180432.0 [1415.26] & 3.97\\
+	\textbf{Dijkstra} & 94898 & 227818 & 139216186 [379096.35] & 173209 [445.51] & 1.82\\
 \hline
-	\textbf{A\^*} & 37921 & 192708 & 6176276.0 [45504.01] & 60681.0 [908.87] & 1.60\\
+	\textbf{A\^*} & 93844 & 226848 & 20696365 [92937.03] & 31412 [127.43] & 0.33\\
 \hline
-	\textbf{BidirectionalA\^*} & 40349 & 196231 & 7884858.0 [61489.88] & 78866.0 [1011.01]& 1.95\\
+	\textbf{BidirectionalA\^*} & 94897 & 229313 & 24812703 [123594.4] & 39316 [172.94]& 0.41\\
 \hline
-	\textbf{LazyMovingTargetAdaptiveA\^*} & 39883 & 193277 & 5953568.0 [36799.00] & 38881.0 [722.78] & 0.97\\ \hline 
+	\textbf{LMTAA\^*} & 94059 & 227060 & 17834146 [73994.16] & 41126 [155.69] & 0.43\\ \hline 
 			\multicolumn{5}{c}{(a) = numero di ricerche finch\`e il target non \`e raggiunto;} \\ \multicolumn{5}{c}{(b) = numero di mosse finch\`e il target non \`e raggiunto;} \\ \multicolumn{5}{c}{(c) = totale delle celle espanse finch\`e  il target non \`e raggiunto [deviazione standard della media];} \\ \multicolumn{5}{c}{(d) = tempo totale di ricerca finch\`e il target non \`e raggiunto (in millisecondi) [deviazione standard della media];} \\ \multicolumn{5}{c}{(e) = tempo medio di ricerca (in millisecondi) }\\
 
 \end{tabular}
@@ -1265,5 +1718,21 @@ $\textbf{divide}(map, nx, ny, new\_width, new\_height, w < h)$\;
 }
 
 \end{table}
+
+\par{Dai risultati raccolti si evince che per tutti e 3 i tipi di mappe LMTAA* \`e risultato il migliore in termini di nodi espansi rispetto tutti gli altri algoritmi di ricerca, ma non in termini di tempo di ricerca, per il quale A* \`e risultato per quasi tutti i casi sempre il migliore, fatta eccezione per le mappe indoor, dove LMTAA* \`e risultato migliore anche in tempo di ricerca.
+}
+\par{
+Il motivo per il quale LMTAA*, pur espandendo meno nodi degli altri algoritmi di ricerca, non risulta il migliore anche in termini temporali di A* \`e perch\`e LMTAA* esegue un numero maggiore di operazioni basilari per una singola iterazione rispetto ad A*, quali ad esempio accessi ad \emph{hashmap} di dimensioni molto grandi. Queste operazioni di accesso ad hashmap giustificano l'\emph{overhead} generato da una singola iterazione di LMTAA* rispetto ad A*.
+}
+\par{
+LMTAA* \`e risultato in particolar modo pi\`u efficace degli altri algoritmi di ricerca  negli esperimenti condotti sulle mappe di tipologia indoor. L'algoritmo A*, ed in generale gli algoritmi di ricerca euristici, hanno difficolt\`a a calcolare una soluzione sulle mappe concave poich\`e, per loro natura, tendono ad esplorare i nodi pi\`u vicini al target, spesso allargando la loro frontiera di esplorazione ai nodi presenti nelle concavit\`a della mappa che di fatto non sono utili a calcolare un percorso ottimo verso il target poich\`e conducono ad un vicolo cieco.
+}
+\par{
+Questo \`e il caso delle mappe indoor, nelle quali l'algoritmo A*, ad ogni ricerca del nodo target, \`e forzato ad esplorare tutti i nodi che compongono una singola stanza, prima di arrivare al target, contrariamente ad LMTAA*, che all'aumentare delle ricerche diventa sempre pi\`u consapevole della distanza reale di ogni nodo verso il target come mostrato nell'esempio nella sezione \ref{sec:adaptive}, escludendo quindi quei nodi che di fatto conducono ad un vicolo cieco.
+
+}
+
+
+
 
 \end{document}

@@ -14,8 +14,8 @@ import java.util.Random;
  * Created by notsaved on 3/30/17.
  */
 public class GlobalTest {
-    private static final int NUMBER_OF_MAPS = 10;
-    private static final int NUMBER_OF_POINTS = 3;
+    private static final int NUMBER_OF_MAPS = 80;
+    private static final int NUMBER_OF_POINTS = 30;
     private LinkedList<SimpleWeightedGraph<Integer,DefaultWeightedEdge>> indoorMaps = new LinkedList<>();
     private LinkedList<SimpleWeightedGraph<Integer,DefaultWeightedEdge>> outdoorMaps = new LinkedList<>();
     private LinkedList<SimpleWeightedGraph<Integer,DefaultWeightedEdge>> dngMaps = new LinkedList<>();
@@ -89,31 +89,40 @@ public class GlobalTest {
     public void runStationaryTest(){
         System.out.println("Stationary Target Test\n");
 
-        performStationaryTest(indoorMaps, mapToPoints, "\nTesting " + indoorMaps.size() + " indoor maps [120x120], " + NUMBER_OF_POINTS + " points for each map\n");
-        performStationaryTest(outdoorMaps, mapToPoints, "\nTesting "+outdoorMaps.size()+" outdoor maps [120x120], "+NUMBER_OF_POINTS+" points for each map\n");
-        performStationaryTest(dngMaps, mapToPoints, "\nTesting "+dngMaps.size()+" dungeon maps [120x120], "+NUMBER_OF_POINTS+" points for each map\n");
+        String res1 = performStationaryTest(indoorMaps, mapToPoints, "\nTesting " + indoorMaps.size() + " indoor maps [120x120], " + NUMBER_OF_POINTS + " points for each map\n");
+        String res2 = performStationaryTest(outdoorMaps, mapToPoints, "\nTesting "+outdoorMaps.size()+" outdoor maps [120x120], "+NUMBER_OF_POINTS+" points for each map\n");
+        String res3 = performStationaryTest(dngMaps, mapToPoints, "\nTesting "+dngMaps.size()+" dungeon maps [120x120], "+NUMBER_OF_POINTS+" points for each map\n");
+        System.out.println(res1+res2+res3);
     }
 
-    private static void performStationaryTest(LinkedList<SimpleWeightedGraph<Integer, DefaultWeightedEdge>> maps, HashMap<SimpleWeightedGraph<Integer, DefaultWeightedEdge>, LinkedList<Point[]>> mapToPoints, String print) {
+    private static String performStationaryTest(LinkedList<SimpleWeightedGraph<Integer, DefaultWeightedEdge>> maps, HashMap<SimpleWeightedGraph<Integer, DefaultWeightedEdge>, LinkedList<Point[]>> mapToPoints, String print) {
         LinkedList<Double> expNodesDijkstraAverages = new LinkedList<Double>();
         LinkedList<Double> expNodesAstarAverages = new LinkedList<Double>();
         LinkedList<Double> expNodesBiAstarAverages = new LinkedList<Double>();
+        LinkedList<Double> expNodesAAstarAverages = new LinkedList<Double>();
         LinkedList<Double> ElapsTimeDijkstraAverages = new LinkedList<Double>();
         LinkedList<Double> ElapsTimeAstarAverages = new LinkedList<Double>();
         LinkedList<Double> ElapsTimeBiAstarAverages = new LinkedList<Double>();
+        LinkedList<Double> ElapsTimeAAstarAverages = new LinkedList<Double>();
+
         for(SimpleWeightedGraph m : maps){
             Test t1 = new DijkstraTest(m, mapToPoints.get(m));
             Test t2 = new AStarTest(m, mapToPoints.get(m));
             Test t3 = new BidirectionalAstarTest(m, mapToPoints.get(m));
+            Test t4 = new AdaptiveAStarTest(m, mapToPoints.get(m));
             t1.runStationaryTest();
             t2.runStationaryTest();
             t3.runStationaryTest();
+            t4.runStationaryTest();
             expNodesDijkstraAverages.add(t1.getExpandedCellPerRun());
             ElapsTimeDijkstraAverages.add(t1.getElapsedTimePerRun());
             expNodesAstarAverages.add(t2.getExpandedCellPerRun());
             ElapsTimeAstarAverages.add(t2.getElapsedTimePerRun());
             expNodesBiAstarAverages.add(t3.getExpandedCellPerRun());
             ElapsTimeBiAstarAverages.add(t3.getElapsedTimePerRun());
+            expNodesAAstarAverages.add(t4.getExpandedCellPerRun());
+            ElapsTimeAAstarAverages.add(t4.getElapsedTimePerRun());
+
         }
 
         double djkstrTotExp = getSum(expNodesDijkstraAverages);
@@ -137,15 +146,25 @@ public class GlobalTest {
         double biastarTimeAvg = getAvg(ElapsTimeBiAstarAverages);
         double biastarTimeStdDev = getStandardDeviation(ElapsTimeBiAstarAverages,biastarTimeAvg);
 
-        System.out.println(print);
+        double aastarTotExp = getSum(expNodesAAstarAverages);
+        double aastarNodeAvg = getAvg(expNodesAAstarAverages);
+        double aastarNodeStdDev = getStandardDeviation(expNodesAAstarAverages,aastarNodeAvg);
+        double aastarTotTime = getSum(ElapsTimeAAstarAverages);
+        double aastarTimeAvg = getAvg(ElapsTimeAAstarAverages);
+        double aastarTimeStdDev = getStandardDeviation(ElapsTimeAAstarAverages,aastarTimeAvg);
 
-        System.out.println("Dijkstra\nTotal Expandend Cell: "+djkstrTotExp+"; Average Expandend Cell: "+djkstrNodeAvg+" ["+djkstrNodeStdDev+
-                "]; Elapsed Time: "+String.format("%.6f",djkstrTotTime)+"ms; Average Elapsed Time: "+String.format("%.6f",djkstrTimeAvg)+"ms ["+String.format("%.6f", djkstrTimeStdDev)+"]");
-        System.out.println("A*\nTotal Expandend Cell: "+astarTotExp+"; Average Expandend Cell: "+astarNodeAvg+" ["+astarNodeStdDev+
-                "]; Elapsed Time: "+String.format("%.6f",astarTotTime)+"ms; Average Elapsed Time: "+String.format("%.6f",astarTimeAvg)+"ms ["+String.format("%.6f",astarTimeStdDev)+"]");
-        System.out.println("Bidirectional A*\nTotal Expandend Cell: "+biastarTotExp+"; Average Expandend Cell: "+biastarNodeAvg+" ["+biastarNodeStdDev+
-                "]; Elapsed Time: "+String.format("%.6f",biastarTotTime)+"ms; Average Elapsed Time: "+String.format("%.6f",biastarTimeAvg)+"ms ["+String.format("%.6f",biastarTimeStdDev)+"]");
+        String res;
+        String djkstrRes = "Dijkstra\nTotal Expandend Cell: "+djkstrTotExp+"; Average Expandend Cell: "+djkstrNodeAvg+" ["+djkstrNodeStdDev+
+                "]; Elapsed Time: "+String.format("%.6f",djkstrTotTime)+"ms; Average Elapsed Time: "+String.format("%.6f",djkstrTimeAvg)+"ms ["+String.format("%.6f", djkstrTimeStdDev)+"]";
+        String astarRes = "A*\nTotal Expandend Cell: "+astarTotExp+"; Average Expandend Cell: "+astarNodeAvg+" ["+astarNodeStdDev+
+                "]; Elapsed Time: "+String.format("%.6f",astarTotTime)+"ms; Average Elapsed Time: "+String.format("%.6f",astarTimeAvg)+"ms ["+String.format("%.6f",astarTimeStdDev)+"]";
+        String bidiRes = "Bidirectional A*\nTotal Expandend Cell: "+biastarTotExp+"; Average Expandend Cell: "+biastarNodeAvg+" ["+biastarNodeStdDev+
+                "]; Elapsed Time: "+String.format("%.6f",biastarTotTime)+"ms; Average Elapsed Time: "+String.format("%.6f",biastarTimeAvg)+"ms ["+String.format("%.6f",biastarTimeStdDev)+"]";
+        String aastarRes = "Adaptive-A*\nTotal Expandend Cell: "+aastarTotExp+"; Average Expandend Cell: "+aastarNodeAvg+" ["+aastarNodeStdDev+
+                "]; Elapsed Time: "+String.format("%.6f",aastarTotTime)+"ms; Average Elapsed Time: "+String.format("%.6f",aastarTimeAvg)+"ms ["+String.format("%.6f",aastarTimeStdDev)+"]";
 
+        res = "\n"+print + "\n"+djkstrRes+"\n"+astarRes+"\n"+bidiRes+"\n"+aastarRes;
+        return res;
     }
 
     public void runMovingTest(){

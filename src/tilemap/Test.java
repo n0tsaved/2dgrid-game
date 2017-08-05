@@ -221,7 +221,7 @@ public abstract class Test  {
                         targetNode = targetNext;
                         moveTarget=!moveTarget;
                         try {
-                            Thread.sleep(3);
+                            Thread.sleep(4);
                         } catch (InterruptedException e) {
                             e.printStackTrace();
                         }

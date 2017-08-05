@@ -20,7 +20,26 @@ public class AdaptiveAStarTest extends Test {
 
     @Override
     public void runStationaryTest() {
-
+        GraphPath<Integer,DefaultWeightedEdge> path;
+        Integer next;
+        pathfinder= new LazyMovingTargetAdaptiveAStarShortestPath<>(map);
+        for(Point[] p : points){
+           /* elapsedTime.put(p, new LinkedList<>());
+            expandedCells.put(p, new LinkedList<>());
+            next= p[0].toNode();
+            while(!next.equals(p[1].toNode())) {
+                now = System.currentTimeMillis();
+                pathfinder = new DijkstraShortestPath<Integer, DefaultEdge>(map.getGraph(), next, p[1].toNode());
+                elapsedTime.get(p).add(System.currentTimeMillis() - now);
+                expandedCells.get(p).add(pathfinder.getNumberOfExpandedNodes());
+                path=pathfinder.getShortestPath(next,p[1].toNode(),new ManhattanDistance());
+                next=Graphs.getOppositeVertex(map.getGraph(), path.getEdgeList().get(0), next);
+            }*/
+            next = p[0].toNode();
+            pathfinder.getShortestPath(next,p[1].toNode(), new OctileDistance());
+            elapsedTime.put(p, pathfinder.getElapsedTime());
+            expandedCells.put(p,pathfinder.getNumberOfExpandedNodes());
+        }
     }
 
     @Override
@@ -48,6 +67,8 @@ public class AdaptiveAStarTest extends Test {
             while(!agentNode.equals(targetNode)){
                 if(pathToFollow==null || !agentPath.getEndVertex().equals(targetNode)) {
                     agentPath = pathfinder.getShortestPath(agentNode, targetNode, new OctileDistance());
+                    if(pathfinder.getElapsedTime() > Long.valueOf(1900))
+                        continue;
                     movingElapsTime.add(pathfinder.getElapsedTime());
                     movingExpCell.add(pathfinder.getNumberOfExpandedNodes());
                     search++;
@@ -65,7 +86,7 @@ public class AdaptiveAStarTest extends Test {
                     }
 
                     try {
-                        Thread.sleep(10);
+                        Thread.sleep(12);
                     } catch (InterruptedException e) {
                         e.printStackTrace();
                     }

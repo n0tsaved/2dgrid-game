@@ -24,8 +24,7 @@ public class AStarTest extends Test {
 
     @Override
     public void runStationaryTest() {
-        GraphPath<Integer,DefaultEdge> path;
-        long now;
+        GraphPath<Integer,DefaultWeightedEdge> path;
         Integer next;
         for(Point[] p : points){
            /* elapsedTime.put(p, new LinkedList<>());
@@ -41,9 +40,8 @@ public class AStarTest extends Test {
             }*/
             next = p[0].toNode();
             pathfinder= new AStarShortestPath<>(map);
-            now = System.currentTimeMillis();
             pathfinder.getShortestPath(next,p[1].toNode(), new OctileDistance());
-            elapsedTime.put(p, System.currentTimeMillis() - now);
+            elapsedTime.put(p, pathfinder.getElapsedTime());
             expandedCells.put(p,pathfinder.getNumberOfExpandedNodes());
         }
     }
@@ -78,6 +76,8 @@ public class AStarTest extends Test {
                 //System.out.println(agentNode+", "+targetNode);
                 if(pathToFollow==null ||((agentPath!=null) && !agentPath.getEndVertex().equals(targetNode))) {
                     agentPath = pathfinder.getShortestPath(agentNode, targetNode, new OctileDistance());
+                    if(pathfinder.getElapsedTime() > Long.valueOf(1900))
+                        continue;
                     movingElapsTime.add(pathfinder.getElapsedTime());
                     movingExpCell.add(pathfinder.getNumberOfExpandedNodes());
                     search++;
@@ -91,7 +91,7 @@ public class AStarTest extends Test {
                     }
 
                     try {
-                        Thread.sleep(10);
+                        Thread.sleep(12);
                     } catch (InterruptedException e) {
                         e.printStackTrace();
                     }

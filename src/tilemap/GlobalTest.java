@@ -27,7 +27,7 @@ public class GlobalTest {
 
 
     public GlobalTest(){
-        System.out.println("Generating "+NUMBER_OF_MAPS+" maps for each kind with "+NUMBER_OF_POINTS+" points for each one...");
+      /*  System.out.println("Generating "+NUMBER_OF_MAPS+" maps for each kind with "+NUMBER_OF_POINTS+" points for each one...");
         MapGenerator indoorGnrt = new IndoorMapGenerator();
         MapGenerator outdoorGnrt = new OutdoorMapGenerator();
         MapGenerator dungeonGnrt = new DungeonMapGenerator();
@@ -169,13 +169,15 @@ public class GlobalTest {
 
     public void runMovingTest(){
         System.out.println("Moving Target Test\n");
-        String indoorRes = performMovingTest(indoorMaps, mapToPoints, "Indoor Test: ");
-        String outdoorRes = performMovingTest(outdoorMaps, mapToPoints, "Outdoor Test: ");
-        String dungeonRes = performMovingTest(dngMaps, mapToPoints, "Dungeon Test: ");
+        String indoorRes = performMovingTest2(new IndoorMapGenerator(), "Indoor Test: ");
+
+        //String indoorRes = performMovingTest(indoorMaps, mapToPoints, "Indoor Test: ");
+        //String outdoorRes = performMovingTest(outdoorMaps, mapToPoints, "Outdoor Test: ");
+        //String dungeonRes = performMovingTest(dngMaps, mapToPoints, "Dungeon Test: ");
         System.out.println("\n"+movingTest);
         System.out.println("\nTested "+indoorMaps.size()+" indoor maps [120x120], "+NUMBER_OF_POINTS+" points for each map\n"+indoorRes);
-        System.out.println("\nTested "+outdoorMaps.size()+" outdoor maps [120x120], "+NUMBER_OF_POINTS+" points for each map\n"+outdoorRes);
-        System.out.println("\nTested "+dngMaps.size()+" dungeon maps [120x120], "+NUMBER_OF_POINTS+" points for each map\n"+dungeonRes);
+        //System.out.println("\nTested "+outdoorMaps.size()+" outdoor maps [120x120], "+NUMBER_OF_POINTS+" points for each map\n"+outdoorRes);
+        //System.out.println("\nTested "+dngMaps.size()+" dungeon maps [120x120], "+NUMBER_OF_POINTS+" points for each map\n"+dungeonRes);
     }
 
     private static String performMovingTest(LinkedList<SimpleWeightedGraph<Integer, DefaultWeightedEdge>> maps, HashMap<SimpleWeightedGraph<Integer, DefaultWeightedEdge>, LinkedList<Point[]>> mapToPoints, String print) {
@@ -199,6 +201,112 @@ public class GlobalTest {
             Test t2 = new AStarTest(m, mapToPoints.get(m));
             Test t3 = new BidirectionalAstarTest(m, mapToPoints.get(m));
             Test t4 = new AdaptiveAStarTest(m, mapToPoints.get(m));
+            t1.runMovingTest();
+            t2.runMovingTest();
+            t3.runMovingTest();
+            t4.runMovingTest();
+            djkstrSearch += t1.getMovingTotalSearches(); djkstrMoves += t1.getTotalMoves();
+            astarSearch += t2.getMovingTotalSearches(); astarMoves += t2.getTotalMoves();
+            biastarSearch += t3.getMovingTotalSearches(); biastarMoves += t3.getTotalMoves();
+            aastarSearch += t4.getMovingTotalSearches(); aastarMoves += t4.getTotalMoves();
+            expNodesDijkstraTotals.add(t1.getMovingTotalExpandedCells());
+            ElapsTimeDijkstraTotals.add(t1.getMovingTotalElapsedTime());
+            expNodesAstarTotals.add(t2.getMovingTotalExpandedCells());
+            ElapsTimeAstarTotals.add(t2.getMovingTotalElapsedTime());
+            expNodesBiAstarTotals.add(t3.getMovingTotalExpandedCells());
+            ElapsTimeBiAstarTotals.add(t3.getMovingTotalElapsedTime());
+            expNodesAAstarTotals.add(t4.getMovingTotalExpandedCells());
+            ElapsTimeAAstarTotals.add(t4.getMovingTotalElapsedTime());
+            count++;
+            try {
+                Runtime.getRuntime().exec("clear");
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+        }
+
+        double djkstrTotExp = getSum(expNodesDijkstraTotals);
+        double djkstrNodeAvg = getAvg(expNodesDijkstraTotals);
+        double djkstrNodeStdDev = getStandardDeviation(expNodesDijkstraTotals,djkstrNodeAvg);
+        double djkstrTotTime = getSum(ElapsTimeDijkstraTotals);
+        double djkstrTimeAvg = getAvg(ElapsTimeDijkstraTotals);
+        double djkstrTimeStdDev = getStandardDeviation(ElapsTimeDijkstraTotals,djkstrTimeAvg);
+        double djkstrRuntimePerSearch = djkstrTotTime / djkstrSearch;
+
+        String djkstrRes = "DIJKSTRA\n(a): " +djkstrSearch+" (b): "+djkstrMoves+" (c): "+djkstrTotExp+" ("+djkstrNodeStdDev+"); (d): "+djkstrTotTime+
+                " ("+djkstrTimeStdDev+") (e): "+djkstrRuntimePerSearch+" (f): "+djkstrTimeAvg;
+
+        double astarTotExp = getSum(expNodesAstarTotals);
+        double astarNodeAvg = getAvg(expNodesAstarTotals);
+        double astarNodeStdDev = getStandardDeviation(expNodesAstarTotals,astarNodeAvg);
+        double astarTotTime = getSum(ElapsTimeAstarTotals);
+        double astarTimeAvg = getAvg(ElapsTimeAstarTotals);
+        double astarTimeStdDev = getStandardDeviation(ElapsTimeAstarTotals,astarTimeAvg);
+        double astarRuntimePerSearch = astarTotTime / astarSearch;
+
+        String astarRes = "A*\n(a): " +astarSearch+" (b): "+astarMoves+" (c): "+astarTotExp+" ("+astarNodeStdDev+"); (d): "+astarTotTime+
+                " ("+astarTimeStdDev+") (e): "+astarRuntimePerSearch;
+
+        double biastarTotExp = getSum(expNodesBiAstarTotals);
+        double biastarNodeAvg = getAvg(expNodesBiAstarTotals);
+        double biastarNodeStdDev = getStandardDeviation(expNodesBiAstarTotals,biastarNodeAvg);
+        double biastarTotTime = getSum(ElapsTimeBiAstarTotals);
+        double biastarTimeAvg = getAvg(ElapsTimeBiAstarTotals);
+        double biastarTimeStdDev = getStandardDeviation(ElapsTimeBiAstarTotals,biastarTimeAvg);
+        double biastarRuntimePerSearch = biastarTotTime / biastarSearch;
+
+        String biastarRes = "BIDIRECTIONAL A*\n(a): " +biastarSearch+" (b): "+biastarMoves+" (c): "+biastarTotExp+" ("+biastarNodeStdDev+"); (d): "+biastarTotTime+
+                " ("+biastarTimeStdDev+") (e): "+biastarRuntimePerSearch;
+
+        double aastarTotExp = getSum(expNodesAAstarTotals);
+        double aastarNodeAvg = getAvg(expNodesAAstarTotals);
+        double aastarNodeStdDev = getStandardDeviation(expNodesAAstarTotals,aastarNodeAvg);
+        double aastarTotTime = getSum(ElapsTimeAAstarTotals);
+        double aastarTimeAvg = getAvg(ElapsTimeAAstarTotals);
+        double aastarTimeStdDev = getStandardDeviation(ElapsTimeAAstarTotals,aastarTimeAvg);
+        double aastarRuntimePerSearch = aastarTotTime / aastarSearch;
+
+        String aastarRes = "ADAPTIVE-A*\n(a): " +aastarSearch+" (b): "+aastarMoves+" (c): "+aastarTotExp+" ("+aastarNodeStdDev+"); (d): "+aastarTotTime+
+                " ("+aastarTimeStdDev+") (e): "+aastarRuntimePerSearch;
+
+        String res = "\n"+djkstrRes+"\n"+astarRes+"\n"+biastarRes+"\n"+aastarRes;
+        return res;
+    }
+
+
+    private static String performMovingTest2(MapGenerator mapGenerator, String print) {
+        HashMap<SimpleWeightedGraph<Integer, DefaultWeightedEdge>, LinkedList<Point[]>> mapToPoints;
+        LinkedList<Double> expNodesDijkstraTotals = new LinkedList<>();
+        LinkedList<Double> expNodesAstarTotals = new LinkedList<Double>();
+        LinkedList<Double> expNodesBiAstarTotals = new LinkedList<Double>();
+        LinkedList<Double> expNodesAAstarTotals = new LinkedList<Double>();
+        LinkedList<Double> ElapsTimeDijkstraTotals = new LinkedList<>();
+        LinkedList<Double> ElapsTimeAstarTotals = new LinkedList<Double>();
+        LinkedList<Double> ElapsTimeBiAstarTotals = new LinkedList<Double>();
+        LinkedList<Double> ElapsTimeAAstarTotals = new LinkedList<Double>();
+        double percentage=0;
+        int count=0;
+        int djkstrSearch =0, djkstrMoves =0;
+        int astarSearch=0, astarMoves =0;
+        int biastarSearch=0, biastarMoves =0;
+        int aastarSearch=0, aastarMoves=0;
+        for(int i = 0; i< NUMBER_OF_MAPS; i++){
+            GameMap map = new GameMap(null, null, mapGenerator);
+                SimpleWeightedGraph m = map.getGraph();
+                LinkedList<Point[]> points = new LinkedList<>();
+                for(int j = 0; j<NUMBER_OF_POINTS; j++){
+                    Point a = chooseRandomPoint(map);
+                    Point b = chooseRandomPoint(map);
+                    Point[] pair = new Point[2];
+                    pair[0] = a;
+                    pair[1] = b;
+                    points.add(pair);
+                }
+            System.out.println(print+(100*count/NUMBER_OF_MAPS)+"% \r");
+            Test t1 = new DijkstraTest(m, points);
+            Test t2 = new AStarTest(m, points);
+            Test t3 = new BidirectionalAstarTest(m, points);
+            Test t4 = new AdaptiveAStarTest(m, points);
             t1.runMovingTest();
             t2.runMovingTest();
             t3.runMovingTest();

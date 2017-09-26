@@ -108,21 +108,29 @@ public class ThetaStarShortestPath<V extends Integer ,E>  {
 
             }
 
-            if(!vertexToHeapNodeMap.containsKey(successor) || tentativeGScore < (double) gScoreMap.get(successor)){
+            if (vertexToHeapNodeMap.containsKey(successor)) { // We re-encountered a vertex. It's
+                // either in the open or closed list.
+                if (tentativeGScore >= gScoreMap.get(successor)) // Ignore path since it is
+                    // non-improving
+                    continue;
 
-               // if(lof) cameFrom.put(successor,parentEdge);
-                //else cameFrom.put(successor, edge);
                 cameFrom.put(successor, parent);
                 gScoreMap.put(successor, tentativeGScore);
 
-                double fScore= tentativeGScore + admissibleHeuristic.getCostEstimate(successor, endVertex);
-                if (!vertexToHeapNodeMap.containsKey(successor)) {
-                    FibonacciHeapNode<V> heapNode=new FibonacciHeapNode<V>(successor);
-                    openList.insert(heapNode, fScore);
-                    vertexToHeapNodeMap.put(successor, heapNode);
-                }else{
-                    openList.decreaseKey((FibonacciHeapNode) vertexToHeapNodeMap.get(successor), fScore);
+                if (closedList.contains(successor)) { // it's in the closed list. Move node back to
+                    // open list, since we discovered a shorter
+                    // path to this node
+                    closedList.remove(successor);
+                    openList.insert(vertexToHeapNodeMap.get(successor), tentativeGScore);
+                } else { // It's in the open list
+                    openList.decreaseKey(vertexToHeapNodeMap.get(successor), tentativeGScore);
                 }
+            } else { // We've encountered a new vertex.
+                cameFrom.put(successor, parent);
+                gScoreMap.put(successor, tentativeGScore);
+                FibonacciHeapNode<V> heapNode = new FibonacciHeapNode<>(successor);
+                openList.insert(heapNode, tentativeGScore);
+                vertexToHeapNodeMap.put(successor, heapNode);
             }
         }
     }

@@ -203,10 +203,10 @@ public class Game extends Canvas{
      */
     public static void main(String[] argv) throws InterruptedException {
 
-        //final Game g = new Game();
-        //g.gameLoop();
-        GlobalTest t = new GlobalTest();
+        final Game g = new Game();
+        g.gameLoop();
+        //GlobalTest t = new GlobalTest();
         //t.runStationaryTest();
-        t.runMovingTest();
+        //t.runMovingTest();
     }
 }

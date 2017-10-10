@@ -44,9 +44,11 @@ $ cd out/artifacts/2dgrid-game/
 $ java -jar 2dgrid-game.jar
 ```
 The currently available options are: 
+```
 -a;--algo {dijkstra, astar, theta, bidi, aastar}
 -e;--entities [1-20]
 -v;--verbose
 -t;--show-trailmax
 -b;--behaviour {chase, evade} (experimental: the user may experience glitches or crashes)
 -h;--help 
+```

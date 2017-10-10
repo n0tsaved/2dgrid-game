@@ -91,14 +91,6 @@
     <pathelement location="${path.variable.maven_repository}/commons-cli/commons-cli/1.4/commons-cli-1.4.jar"/>
   </path>
   
-  <path id="library.net.sf.jchart2d:jchart2d:3.3.2.classpath">
-    <pathelement location="${path.variable.maven_repository}/com/jidesoft/jide-oss/2.4.8/jide-oss-2.4.8.jar"/>
-    <pathelement location="${path.variable.maven_repository}/commons-io/commons-io/1.3.1/commons-io-1.3.1.jar"/>
-    <pathelement location="${path.variable.maven_repository}/commons-logging/commons-logging/1.0.4/commons-logging-1.0.4.jar"/>
-    <pathelement location="${path.variable.maven_repository}/net/sf/jchart2d/jchart2d/3.3.2/jchart2d-3.3.2.jar"/>
-    <pathelement location="${path.variable.maven_repository}/org/apache/xmlgraphics/xmlgraphics-commons/1.3.1/xmlgraphics-commons-1.3.1.jar"/>
-  </path>
-  
   <!-- Modules -->
   
   
@@ -123,14 +115,12 @@
   <path id="2dgrid-game.module.production.classpath">
     <path refid="${module.jdk.classpath.2dgrid-game}"/>
     <path refid="library.com.badlogicgames.gdx:gdx-ai:1.8.1.classpath"/>
-    <path refid="library.net.sf.jchart2d:jchart2d:3.3.2.classpath"/>
     <path refid="library.commons-cli:commons-cli:1.4.classpath"/>
   </path>
   
   <path id="2dgrid-game.runtime.production.module.classpath">
     <pathelement location="${2dgrid-game.output.dir}"/>
     <path refid="library.com.badlogicgames.gdx:gdx-ai:1.8.1.classpath"/>
-    <path refid="library.net.sf.jchart2d:jchart2d:3.3.2.classpath"/>
     <path refid="library.commons-cli:commons-cli:1.4.classpath"/>
   </path>
   
@@ -138,7 +128,6 @@
     <path refid="${module.jdk.classpath.2dgrid-game}"/>
     <pathelement location="${2dgrid-game.output.dir}"/>
     <path refid="library.com.badlogicgames.gdx:gdx-ai:1.8.1.classpath"/>
-    <path refid="library.net.sf.jchart2d:jchart2d:3.3.2.classpath"/>
     <path refid="library.commons-cli:commons-cli:1.4.classpath"/>
   </path>
   
@@ -146,7 +135,6 @@
     <pathelement location="${2dgrid-game.testoutput.dir}"/>
     <pathelement location="${2dgrid-game.output.dir}"/>
     <path refid="library.com.badlogicgames.gdx:gdx-ai:1.8.1.classpath"/>
-    <path refid="library.net.sf.jchart2d:jchart2d:3.3.2.classpath"/>
     <path refid="library.commons-cli:commons-cli:1.4.classpath"/>
   </path>
   
@@ -222,8 +210,8 @@
       <zipfileset src="${path.variable.maven_repository}/commons-logging/commons-logging/1.0.4/commons-logging-1.0.4.jar"/>
       <zipfileset src="${path.variable.maven_repository}/com/jidesoft/jide-oss/2.4.8/jide-oss-2.4.8.jar"/>
       <manifest>
-    	<attribute name="Main-Class" value="tilemap.Game"/>
-  	</manifest>
+	      <attribute name="Main-Class" value="tilemap.Game"/>
+      </manifest>
     </jar>
     <copy file="${temp.jar.path.2dgrid-game.jar}" tofile="${artifact.temp.output.2dgrid-game:jar}/2dgrid-game.jar"/>
   </target>

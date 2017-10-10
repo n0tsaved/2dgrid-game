@@ -7,7 +7,9 @@ import tilemap.jgrapht.graph.DefaultEdge;
 import tilemap.jgrapht.graph.DefaultWeightedEdge;
 
 import java.awt.*;
+import java.util.Iterator;
 import java.util.LinkedList;
+import java.util.List;
 import java.util.Random;
 
 /**
@@ -21,12 +23,23 @@ public class Player {
     private String image;
     private GameMap gameMap;
 
+    private Integer previousEvadeFrom=-1;
+
 
     private Random r = new Random(gameMap.WIDTH*gameMap.HEIGHT);
-    
+
+    private boolean showEvasionPath = false;
+    private boolean verbose = false;
+    private List<Integer> evasionPath;
+
+
     public Player(String s) {
         image = s;
         r.setSeed(System.currentTimeMillis());
+    }
+
+    public void setEvasionPathVisible(){
+        this.showEvasionPath=true;
     }
 
     public void setGameMap(GameMap gameMap) {
@@ -50,8 +63,8 @@ public class Player {
             // x/y position and the size that tiles are being rendered at. So
             // if we're at 1.5,1.5 and the tile size is 10 we'd render on screen
             // at 15,15.
-            int xp = (int) (Tile.TILE_SIZE * x);
-            int yp = (int) (Tile.TILE_SIZE * y);
+            int xp = (int) (Tile.TILE_SIZE * x + Tile.TILE_SIZE/2);
+            int yp = (int) (Tile.TILE_SIZE * y + Tile.TILE_SIZE/2);
             g.setColor(Color.BLACK);
 
             // rotate the sprite based on the current angle and then
@@ -61,6 +74,21 @@ public class Player {
 
             //g.drawImage(image, (int) (xp - 16), (int) (yp - 16), null);
             //g.rotate(-ang, xp, yp);
+        //if(evasionPath!=null)
+        if(evasionPath != null){
+            g.setColor(Color.GREEN);
+            Iterator<Integer> i = evasionPath.iterator();
+            int current_x = evasionPath.get(0) % GameMap.WIDTH;
+            int current_y = evasionPath.get(0) / GameMap.WIDTH;
+            while (i.hasNext()) {
+                Integer next = i.next();
+                int next_x = next % GameMap.WIDTH;
+                int next_y = next / GameMap.WIDTH;
+                g.drawLine(current_x * Tile.TILE_SIZE + Tile.TILE_SIZE+Tile.TILE_SIZE/2, current_y * Tile.TILE_SIZE-Tile.TILE_SIZE/2, next_x * Tile.TILE_SIZE + Tile.TILE_SIZE + Tile.TILE_SIZE/2, next_y * Tile.TILE_SIZE - Tile.TILE_SIZE/2);
+                current_x = next_x;
+                current_y = next_y;
+            }
+        }
     }
 
 
@@ -110,7 +138,7 @@ public class Player {
 
         // check if the new position of the entity collides with
         // anything
-        if (validLocation(nx, ny)) {
+        if (validLocation(nx, ny) &&  GameMap.lineOfSight(x,y,nx,ny)) {
             // if it doesn't then change our position to the new position
             x = nx;
             y = ny;
@@ -119,7 +147,6 @@ public class Player {
             //ang = (float) (Math.atan2(dy, dx) - (Math.PI / 2));
             return true;
         }
-
         // if it wasn't a valid move don't do anything apart from
         // tell the caller
         return false;
@@ -129,24 +156,41 @@ public class Player {
         return gameMap.WIDTH*y +x;
     }
 
-    public void showEvasionPath(){
-        LinkedList<Entity> enemies = gameMap.getEnemies();
-        Entity e = enemies.getFirst();
-        Integer agentNode = e.getNode();
-        Integer targetNode = this.getNode();
-        Trailmax<Integer, DefaultWeightedEdge> t = new Trailmax<>(gameMap.getGraph());
-        GraphPath<Integer, DefaultWeightedEdge> p = t.getShortestPath(agentNode, targetNode, null);
-        colorEvasionPath(p, e);
+    private void uncolorPath() {
+        Tile[][] map = gameMap.getData();
+        if (evasionPath == null) return;
+        for (Integer i : evasionPath)
+            map[i % gameMap.WIDTH][i / gameMap.WIDTH].isEvasion = false;
     }
 
-    private void colorEvasionPath(GraphPath<Integer, DefaultWeightedEdge> p, Entity e) {
+    public void setEvasionPath(int node) {
+        if(!showEvasionPath) return;
+        if(node == previousEvadeFrom)
+            return;
+        previousEvadeFrom = node;
+
+         GraphPath<Integer,DefaultWeightedEdge> p = new Trailmax<>(gameMap.getGraph()).getShortestPath( node, getNode(),null);
+        if (p == null) return;
+        evasionPath = Graphs.getPathVertexList(p);
+        //pathToFollow.remove(0);
+        //colorPath(pathToFollow);
+        if(verbose) report(p);
+        //nextPosition = new Vector2(pathToFollow.get(0) % GameMap.WIDTH, pathToFollow.get(0) / GameMap.WIDTH);
+    }
+
+    private void report(GraphPath<Integer, DefaultWeightedEdge> p) {
+        System.out.println("EvasionPath: "+p.toString());
+    }
+
+    private void colorEvasionPath() {
         Tile[][] map = gameMap.getData();
-        if(p == null) return;
-        System.out.println("player evades enemy "+e.getImage());
-        System.out.println(p.toString());
-        for(Integer i : Graphs.getPathVertexList(p))
+        for(Integer i : evasionPath)
                 map[i%gameMap.WIDTH][i/gameMap.WIDTH].isEvasion=true;
 //        for(Integer i : Graphs.getPathVertexList(ThetaStarpath))
 //            map[i%gameMap.WIDTH][i/gameMap.WIDTH].isThetaPath=true;
+    }
+
+    public void setVerbose() {
+        this.verbose= true;
     }
 }

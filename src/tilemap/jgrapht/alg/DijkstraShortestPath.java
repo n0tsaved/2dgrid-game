@@ -66,7 +66,11 @@ public final class DijkstraShortestPath<V, E> implements Pathfinder<V,E>
     private Graph<V,E> graph;
     private long elapsedTime;
 
-    protected boolean verbose = true;
+    protected boolean verbose = false;
+
+    public DijkstraShortestPath(Graph<V,E> graph){
+        this.graph = graph;
+    }
 
 
     /**
@@ -260,6 +264,11 @@ public final class DijkstraShortestPath<V, E> implements Pathfinder<V,E>
 
     public long getElapsedTime(){
         return elapsedTime;
+    }
+
+    @Override
+    public void setVerbose() {
+        this.verbose=true;
     }
 }
 

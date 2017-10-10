@@ -85,7 +85,7 @@ public class AStarShortestPath<V,E> implements Pathfinder<V,E> {
     //Counter which keeps track of the number of expanded nodes
     protected int numberOfExpandedNodes;
     private long elapsedTime = Long.MAX_VALUE;
-    private boolean verbose=true;
+    private boolean verbose=false;
 
 
     public AStarShortestPath(SimpleWeightedGraph<V, E> graph) {
@@ -228,6 +228,11 @@ public class AStarShortestPath<V,E> implements Pathfinder<V,E> {
 
     public long getElapsedTime(){
         return elapsedTime;
+    }
+
+    @Override
+    public void setVerbose() {
+        this.verbose = true;
     }
 
 

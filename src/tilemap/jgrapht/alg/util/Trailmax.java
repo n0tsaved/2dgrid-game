@@ -24,6 +24,7 @@ public class Trailmax<V,E> implements Pathfinder<V,E>{
     private FibonacciHeapNode<V> last;
     private int expandedNodes;
     private long elapsedTime = Long.MAX_VALUE;
+    private boolean verbose = false;
 
     private void initialize(){
         agentQueue = new FibonacciHeap<V>();
@@ -171,6 +172,11 @@ public class Trailmax<V,E> implements Pathfinder<V,E>{
     @Override
     public long getElapsedTime() {
         return elapsedTime;
+    }
+
+    @Override
+    public void setVerbose() {
+        this.verbose = true;
     }
 
 

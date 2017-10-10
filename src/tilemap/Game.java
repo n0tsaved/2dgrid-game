@@ -1,19 +1,23 @@
 package tilemap;
 
-import tilemap.jgrapht.alg.BidirectionalAStarShortestPath;
-import tilemap.jgrapht.alg.LazyMovingTargetAdaptiveAStarShortestPath;
-import tilemap.jgrapht.alg.ThetaStarShortestPath;
+
+import org.apache.commons.cli.*;
+import tilemap.jgrapht.alg.*;
+import tilemap.jgrapht.alg.interfaces.Pathfinder;
 import tilemap.jgrapht.alg.util.Trailmax;
 import tilemap.jgrapht.graph.DefaultEdge;
 import tilemap.jgrapht.graph.DefaultWeightedEdge;
+
 
 import java.awt.*;
 import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
 import java.awt.image.BufferStrategy;
 import java.util.*;
+import java.util.List;
 
 public class Game extends Canvas{
+
     private long lastFpsTime;
     /** The buffered strategy used for accelerated rendering */
     private BufferStrategy strategy;
@@ -28,10 +32,21 @@ public class Game extends Canvas{
 
     private GameController controller;
 
+    private static final int DIJKSTRA_INT = 1;
+    private static final int ASTAR_INT = 2;
+    private static final int THETA_INT = 3;
+    private static final int BIDI_INT = 4;
+    private static final int AASTAR_INT = 5;
+    private static final int CHASE_BEHAVIOUR = 1;
+    private static final int EVADE_BEHAVIOUR = 2;
+    private static final String SPRITES = "♈♉☠☢☣♿♻♝⚉⚛⚚☘☎♞⛷⚡☃☸♣♠♥♦♰";
+    private static final Random rnd = new Random();
 
+    private int currentAlgo;
+    private int currentBehaviour;
+    private boolean verbose;
 
-    public Game() {
-
+    public Game(int algoType, int numberOfEntities, boolean showTrailmax, int behaviourType, boolean verbose) {
 
         // create the AWT frame. Its going to be fixed size (500x500)
         // and not resizable - this just gives us less to account for
@@ -91,8 +106,48 @@ public class Game extends Canvas{
         player.setGameMap(gameMap);
         player.spawn();
         controller= new GameController( this, player);
-        enemies.add(new Entity("#", gameMap, new BidirectionalAStarShortestPath<Integer, DefaultWeightedEdge>(gameMap.getGraph())));
-        enemies.add(new Entity("§", gameMap, new BidirectionalAStarShortestPath<Integer, DefaultWeightedEdge>(gameMap.getGraph())));
+        currentAlgo = algoType;
+        this.verbose = verbose;
+        if(verbose) player.setVerbose();
+        if(showTrailmax) player.setEvasionPathVisible();
+        for(int i = 0; i < numberOfEntities; i++){
+            Pathfinder<Integer, DefaultWeightedEdge> p = null;
+            if(currentAlgo == DIJKSTRA_INT)
+                p = new DijkstraShortestPath<>(gameMap.getGraph());
+            else if (currentAlgo == ASTAR_INT)
+                p = new AStarShortestPath<>(gameMap.getGraph());
+            else if (currentAlgo == BIDI_INT)
+                p = new BidirectionalAStarShortestPath<>(gameMap.getGraph());
+            else if (currentAlgo == AASTAR_INT)
+                p = new LazyMovingTargetAdaptiveAStarShortestPath<>(gameMap.getGraph());
+            char sprite = SPRITES.charAt(rnd.nextInt(SPRITES.length()));
+            char[] arraySprite = new char[1];
+            arraySprite[0] = sprite;
+            Entity e = new Entity(new String(arraySprite), gameMap, p);
+            if(currentAlgo == THETA_INT)
+                e.setThetaPath();
+            if(verbose == true) {
+                e.setVerbose();
+                //p.setVerbose();
+            }
+            if(behaviourType!=0) {
+                if (behaviourType == EVADE_BEHAVIOUR) {
+                    Trailmax<Integer, DefaultWeightedEdge> t = new Trailmax<>(gameMap.getGraph());
+                    if (verbose) t.setVerbose();
+                    e.setBehaviour(new FleeBehaviour(e, player, t));
+                } else if (behaviourType == CHASE_BEHAVIOUR) {
+                    LazyMovingTargetAdaptiveAStarShortestPath<Integer, DefaultWeightedEdge> l = new LazyMovingTargetAdaptiveAStarShortestPath<>(gameMap.getGraph());
+                    if (verbose) l.setVerbose();
+                    e.setBehaviour(new FollowBehaviour(e, player, l));
+                }
+                currentBehaviour = behaviourType;
+            }
+            enemies.add(e);
+
+        }
+
+        //enemies.add(new Entity("#", gameMap, new BidirectionalAStarShortestPath<Integer, DefaultWeightedEdge>(gameMap.getGraph())));
+        //enemies.add(new Entity("§", gameMap, new BidirectionalAStarShortestPath<Integer, DefaultWeightedEdge>(gameMap.getGraph())));
         //for(Entity e : enemies)
         //    e.spawn();
 
@@ -124,9 +179,10 @@ public class Game extends Canvas{
             g.translate(100,100);
             gameMap.paint(g);
             player.paint(g);
-            for(Entity e : enemies)
-                    e.paint(g);
+            for(Entity e : enemies) {
 
+                e.paint(g);
+            }
             // flip the buffer so we can see the rendering
             g.dispose();
             strategy.show();
@@ -169,9 +225,10 @@ public class Game extends Canvas{
             if ((delta % 5) != 0)
                 controller.logic(delta % 5);
             //}
-
+            //player.showEvasionPath();
             for(Entity e : enemies)
                 e.update(delta);
+            player.setEvasionPath(enemies.getFirst().getNode());
             Thread.sleep( Math.abs((last-System.nanoTime() + OPTIMAL_TIME)/1000000) );
 
         }
@@ -181,17 +238,45 @@ public class Game extends Canvas{
         gameMap=new GameMap(player, enemies, m);
         player.setGameMap(gameMap);
         player.spawn();
+
         for(Entity e : enemies) {
             e.setGameMap(gameMap);
             e.spawn();
-            //e.setPathfinder(new BidirectionalAStarShortestPath<Integer, DefaultWeightedEdge>(gameMap.getGraph()));
+            Pathfinder<Integer, DefaultWeightedEdge> p = null;
+            if(currentAlgo == DIJKSTRA_INT)
+                p = new DijkstraShortestPath<>(gameMap.getGraph());
+            else if (currentAlgo == ASTAR_INT)
+                p = new AStarShortestPath<>(gameMap.getGraph());
+            else if (currentAlgo == BIDI_INT)
+                p = new BidirectionalAStarShortestPath<>(gameMap.getGraph());
+            else if (currentAlgo == AASTAR_INT)
+                p = new LazyMovingTargetAdaptiveAStarShortestPath<>(gameMap.getGraph());
+            if(currentAlgo == THETA_INT)
+                e.setThetaPath();
+
+            if(currentBehaviour!=0) {
+                if (currentBehaviour == EVADE_BEHAVIOUR) {
+                    Trailmax<Integer, DefaultWeightedEdge> t = new Trailmax<>(gameMap.getGraph());
+                    if (verbose) t.setVerbose();
+                    e.setBehaviour(new FleeBehaviour(e, player, t));
+                } else if (currentBehaviour == CHASE_BEHAVIOUR) {
+                    LazyMovingTargetAdaptiveAStarShortestPath<Integer, DefaultWeightedEdge> l = new LazyMovingTargetAdaptiveAStarShortestPath<>(gameMap.getGraph());
+                    if (verbose) l.setVerbose();
+                    e.setBehaviour(new FollowBehaviour(e, player, l));
+                }
+            }
+            e.setPathfinder(p);
+            if(verbose == true) {
+                e.setVerbose();
+                //p.setVerbose();
+            }
             if(gameMap.lineOfSight(player.getCoords()[0], player.getCoords()[1], (int) e.getX(),(int) e.getY()))
-                System.out.println("player is in the lof of "+ e.getImage());
+                if (verbose) System.out.println("player is in the lof of "+ e.getImage());
         }
-        Entity e1 = enemies.getFirst();
-        Entity e2 = enemies.getLast();
-        e1.setBehaviour(new FollowBehaviour(e1, e2, new LazyMovingTargetAdaptiveAStarShortestPath<Integer, DefaultWeightedEdge>(gameMap.getGraph())));
-        e2.setBehaviour(new FleeBehaviour(e2,e1, new Trailmax<Integer, DefaultWeightedEdge>(gameMap.getGraph())));
+        //Entity e1 = enemies.getFirst();
+        //Entity e2 = enemies.getLast();
+        //e1.setBehaviour(new FollowBehaviour(e1, e2, new LazyMovingTargetAdaptiveAStarShortestPath<Integer, DefaultWeightedEdge>(gameMap.getGraph())));
+        //e2.setBehaviour(new FleeBehaviour(e2,e1, new Trailmax<Integer, DefaultWeightedEdge>(gameMap.getGraph())));
         //player.showEvasionPath();
 
     }
@@ -203,8 +288,118 @@ public class Game extends Canvas{
      */
     public static void main(String[] argv) throws InterruptedException {
 
-        final Game g = new Game();
-        g.gameLoop();
+        Option helpOpt = Option.builder("h")
+                .longOpt("help")
+                .desc("print this help")
+                .build();
+        Option algOpt = Option.builder("a")
+                .longOpt("algo")
+                .desc("set algorithm to use in the simulation")
+                .hasArg()
+                .argName("algorithm")
+                .build();
+        Option entOpt = Option.builder("e")
+                .longOpt("entities")
+                .desc("set how many entities in the simulation")
+                .hasArg()
+                .argName("numberOfEntities")
+                .build();
+        Option trailmaxOpt = Option.builder("t")
+                .longOpt("show-trailmax")
+                .desc("show trailmax path")
+                .build();
+        Option behaviourOpt = Option.builder("b")
+                .longOpt("behaviour")
+                .desc("set behaviour type")
+                .hasArg()
+                .argName("behaviourtype")
+                .build();
+        Option verboseOpt = Option.builder("v")
+                .longOpt("verbose")
+                .desc("run in verbose mode")
+                .build();
+        Options options = new Options();
+
+        options.addOption(helpOpt);
+        options.addOption(algOpt);
+        options.addOption(entOpt);
+        options.addOption(trailmaxOpt);
+        options.addOption(behaviourOpt);
+        options.addOption(verboseOpt);
+
+        CommandLineParser parser = new DefaultParser();
+
+        try {
+            // parse the command line arguments
+            CommandLine line = parser.parse( options, argv );
+
+            if(line.hasOption("help")) {
+                HelpFormatter formatter = new HelpFormatter();
+                formatter.printHelp("2dgrid-game", options);
+                System.exit(0);
+            }
+            int pathfindertype=DIJKSTRA_INT;
+            if(line.hasOption("algo")){
+                String algo = line.getOptionValue("algo");
+                switch(algo){
+                    case "dijkstra":
+                        pathfindertype = DIJKSTRA_INT;
+                        break;
+                    case "astar":
+                        pathfindertype = ASTAR_INT;
+                        break;
+                    case "theta":
+                        pathfindertype = THETA_INT;
+                        break;
+                    case "bidi":
+                        pathfindertype = BIDI_INT;
+                        break;
+                    case "aastar":
+                        pathfindertype = AASTAR_INT;
+                        break;
+                    default:
+                        throw new IllegalArgumentException("Invalid algorithm name: "+algo);
+                }
+            }
+            int nentities =1;
+            if(line.hasOption("entities")) {
+                nentities = Integer.parseInt(line.getOptionValue("entities"));
+                if (nentities <= 0 || nentities > 20)
+                    throw new IllegalArgumentException("Invalid number of entities: " + nentities);
+            }
+            boolean showtrailmax = false;
+            if(line.hasOption("show-trailmax"))
+                showtrailmax = true;
+            int behaviourType = 0;
+            if(line.hasOption("behaviour")){
+                String behaviourStr = line.getOptionValue("behaviour");
+                switch(behaviourStr) {
+                    case "evade":
+                        behaviourType = EVADE_BEHAVIOUR;
+                        break;
+                    case "chase":
+                        behaviourType = CHASE_BEHAVIOUR;
+                        break;
+                }
+            }
+
+            boolean verbose = false;
+            if(line.hasOption("verbose"))
+                verbose = true;
+
+            Game g = new Game(pathfindertype, nentities, showtrailmax, behaviourType, verbose);
+            g.gameLoop();
+
+        }
+        catch( ParseException exp ) {
+            // oops, something went wrong
+            System.err.println( "Parsing failed.  Reason: " + exp.getMessage() );
+        }
+
+
+
+        //final Game g = new Game(pathfindertype, );
+        //g.gameLoop();
         //GlobalTest t = new GlobalTest();
         //t.runStationaryTest();
         //t.runMovingTest();

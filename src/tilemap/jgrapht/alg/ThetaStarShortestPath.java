@@ -38,6 +38,8 @@ public class ThetaStarShortestPath<V extends Integer ,E>  {
     protected int numberOfExpandedNodes;
     private long elapsedTime = Long.MAX_VALUE;
 
+    private boolean verbose = false;
+
     public ThetaStarShortestPath(SimpleWeightedGraph<V, E> graph) {
         this.graph=graph;
     }
@@ -61,11 +63,16 @@ public class ThetaStarShortestPath<V extends Integer ,E>  {
         FibonacciHeapNode<V> heapNode=new FibonacciHeapNode<V>(sourceVertex);
         openList.insert(heapNode, 0.0);
         vertexToHeapNodeMap.put(sourceVertex, heapNode);
+        long now = System.currentTimeMillis();
 
         do {
             FibonacciHeapNode<V> currentNode = openList.removeMin();
             //Check whether we reached the target vertex
             if (currentNode.getData().equals(targetVertex)){
+                elapsedTime= System.currentTimeMillis() - now;
+
+                if(verbose)
+                    System.out.println("["+this.getClass()+"] source: "+sourceVertex+" target: "+targetVertex+" elapsed: "+elapsedTime+" expanded: "+numberOfExpandedNodes);
                 //Build the path
                 return this.buildPath(targetVertex);
             }
@@ -178,6 +185,9 @@ public class ThetaStarShortestPath<V extends Integer ,E>  {
         return Math.sqrt(Math.pow(sourceX - targetX,2)+Math.pow(sourceY - targetY,2));    }
 
 
+    public void setVerbose(){
+        this.verbose=true;
+    }
 }
 
 

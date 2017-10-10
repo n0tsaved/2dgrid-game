@@ -2,17 +2,8 @@ package tilemap;
 
 
 
-import com.badlogic.gdx.ai.steer.Steerable;
-import com.badlogic.gdx.ai.steer.SteeringAcceleration;
-import com.badlogic.gdx.ai.steer.SteeringBehavior;
-import com.badlogic.gdx.ai.steer.behaviors.FollowPath;
-import com.badlogic.gdx.ai.steer.utils.Path;
-import com.badlogic.gdx.ai.steer.utils.paths.LinePath;
-import com.badlogic.gdx.ai.utils.Location;
 import com.badlogic.gdx.math.Vector2;
-import com.badlogic.gdx.ai.utils.*;
 import com.badlogic.gdx.utils.Array;
-import sun.management.Agent;
 import tilemap.jgrapht.GraphPath;
 import tilemap.jgrapht.Graphs;
 import tilemap.jgrapht.alg.*;
@@ -52,9 +43,11 @@ public class Entity {
     private boolean nextNodeflag = false;
     private Pathfinder pathfinder;
     private AgentBehaviour behaviour;
-
+    private boolean useTheta = false;
+    private boolean verbose = false;
     public static final float COLLISION_RADIUS = 0.3f;
     public final float SPEED = 0.2f;
+    private boolean thinking = false;
 
 
     public Entity(String s, GameMap m, Pathfinder p) {
@@ -62,25 +55,7 @@ public class Entity {
         gameMap = m;
         pathfinder = p;
         spawn();
-        //astarPathFind=new AStarShortestPath<Integer, DefaultWeightedEdge>(gameMap.getGraph());
-        //thetaPathFind=new ThetaStarShortestPath<>(gameMap.getGraph());
-        //AStarpath=astarPathFind.getShortestPath(new Integer(y*GameMap.WIDTH+x), new Integer(gameMap.getPlayerNode()), new ManhattanDistance());
-        //ThetaStarpath=thetaPathFind.getShortestPath(new Integer(y*GameMap.WIDTH+x), new Integer(gameMap.getPlayerNode()), new ManhattanDistance());
-        paastarPathFind = new LazyMovingTargetAdaptiveAStarShortestPath<>(gameMap.getGraph());
-        AStarpath = paastarPathFind.getShortestPath(new Integer((int) (y * GameMap.WIDTH + x)), new Integer(gameMap.getPlayerNode()), new ManhattanDistance());
-        //dijkstraPathFind = new DijkstraShortestPath<>(gameMap.getGraph(),
-        //        y*GameMap.WIDTH+x, gameMap.getPlayerNode());
-        //System.out.println(ptfnd.getPath().getEdgeList().toString());
-        //thetaPathFind=new ThetaStarShortestPath<>(m);
-        //path=thetaPathFind.getShortestPath(new Integer(y*GameMap.WIDTH+x), new Integer(gameMap.getPlayerNode()), new ManhattanDistance());
-        Tile[][] map = gameMap.getData();
-        //path= dijkstraPathFind.getPath();
 
-        if (AStarpath == null) return;
-        pathToFollow = Graphs.getPathVertexList(AStarpath);
-
-        colorPath();
-        report();
     }
 
     public int getNode() {
@@ -113,28 +88,31 @@ public class Entity {
         //pathToFollow.remove(0);
 
         //nextPosition = new Vector2(pathToFollow.get(0) % GameMap.WIDTH, pathToFollow.get(0) / GameMap.WIDTH);
-        colorPath();
+        colorPath(pathToFollow);
 
         report();
         nextNodeflag = true;
     }
 
-    private void uncolorPath() {
+    private void uncolorPath(List<Integer> pathToFollow) {
         Tile[][] map = gameMap.getData();
         if (AStarpath == null) return;
-        for (Integer i : Graphs.getPathVertexList(AStarpath))
+        for (Integer i : pathToFollow)
             map[i % gameMap.WIDTH][i / gameMap.WIDTH].isAstarPath = false;
         //for(Integer i : Graphs.getPathVertexList(ThetaStarpath))
         //  map[i%gameMap.WIDTH][i/gameMap.WIDTH].isThetaPath=false;
     }
 
-    private void colorPath() {
+    private void colorPath(List<Integer> pathToFollow) {
         Tile[][] map = gameMap.getData();
-        if (AStarpath == null) return;
+        if (pathToFollow == null) return;
         if (pathfinder.getClass() == BidirectionalAStarShortestPath.class)
-            for (Integer i : Graphs.getPathVertexList(AStarpath))
+            for (Integer i : pathToFollow)
                 if (!map[i % gameMap.WIDTH][i / gameMap.WIDTH].isFrontier)
                     map[i % gameMap.WIDTH][i / gameMap.WIDTH].isAstarPath = true;
+        else
+            for (Integer j : pathToFollow)
+                map[j % gameMap.WIDTH][j / gameMap.WIDTH].isAstarPath = true;
 
         //if (ThetaStarpath != null)
         //  for (Integer t : Graphs.getPathVertexList(ThetaStarpath))
@@ -173,8 +151,8 @@ public class Entity {
         // x/y position and the size that tiles are being rendered at. So
         // if we're at 1.5,1.5 and the tile size is 10 we'd render on screen
         // at 15,15.
-        int xp = (int) (Tile.TILE_SIZE * x + Tile.TILE_SIZE);
-        int yp = (int) (Tile.TILE_SIZE * y);
+        int xp = (int) (Tile.TILE_SIZE * x + Tile.TILE_SIZE/2);
+        int yp = (int) (Tile.TILE_SIZE * y + Tile.TILE_SIZE/2);
         g.setColor(Color.BLUE);
 
         // rotate the sprite based on the current angle and then
@@ -187,13 +165,27 @@ public class Entity {
         if (ThetaStarpath != null && !ThetaStarpath.isEmpty()) {
             g.setColor(Color.BLUE);
             Iterator<Integer> i = ThetaStarpath.iterator();
-            int current_x = (int) x;
-            int current_y = (int) y;
+            int current_x = ThetaStarpath.get(0) % GameMap.WIDTH;
+            int current_y = ThetaStarpath.get(0) / GameMap.WIDTH;
             while (i.hasNext()) {
                 Integer next = i.next();
                 int next_x = next % GameMap.WIDTH;
                 int next_y = next / GameMap.WIDTH;
-                g.drawLine(current_x * Tile.TILE_SIZE + 5, current_y * Tile.TILE_SIZE - 5, next_x * Tile.TILE_SIZE + 5, next_y * Tile.TILE_SIZE - 5);
+                g.drawLine(current_x * Tile.TILE_SIZE + Tile.TILE_SIZE+Tile.TILE_SIZE/2, current_y * Tile.TILE_SIZE-Tile.TILE_SIZE/2, next_x * Tile.TILE_SIZE + Tile.TILE_SIZE + Tile.TILE_SIZE/2, next_y * Tile.TILE_SIZE - Tile.TILE_SIZE/2);
+                current_x = next_x;
+                current_y = next_y;
+            }
+        }
+        if(AStarpath != null){
+            g.setColor(Color.RED);
+            Iterator<Integer> i = pathToFollow.iterator();
+            int current_x = pathToFollow.get(0) % GameMap.WIDTH;
+            int current_y = pathToFollow.get(0) / GameMap.WIDTH;
+            while (i.hasNext()) {
+                Integer next = i.next();
+                int next_x = next % GameMap.WIDTH;
+                int next_y = next / GameMap.WIDTH;
+                g.drawLine(current_x * Tile.TILE_SIZE + Tile.TILE_SIZE+Tile.TILE_SIZE/2, current_y * Tile.TILE_SIZE-Tile.TILE_SIZE/2, next_x * Tile.TILE_SIZE + Tile.TILE_SIZE + Tile.TILE_SIZE/2, next_y * Tile.TILE_SIZE - Tile.TILE_SIZE/2);
                 current_x = next_x;
                 current_y = next_y;
             }
@@ -246,7 +238,8 @@ public class Entity {
          FollowBehaviour b = null;
         if (behaviour != null) {
             behaviour.doBehaviour(delta);
-        }
+        }else setPath(gameMap.getPlayerNode());
+
     }
 
     public void setBehaviour(AgentBehaviour b) {
@@ -295,6 +288,7 @@ public class Entity {
     }
 
     public void setThetaPath() {
+        useTheta = true;
         thetaPathFind = new ThetaStarShortestPath<>(gameMap.getGraph());
         ThetaStarpath = thetaPathFind.getShortestPath(new Integer((int) (y * GameMap.WIDTH + x)), new Integer(gameMap.getPlayerNode()), new OctileDistance());
     }
@@ -318,17 +312,40 @@ public class Entity {
         this.nextPosition = nextPosition;
     }*/
 
-    public void setPathfinder(BidirectionalAStarShortestPath<Integer, DefaultWeightedEdge> pathfinder) {
+    public void setPathfinder(Pathfinder<Integer, DefaultWeightedEdge> pathfinder) {
         this.pathfinder = pathfinder;
     }
 
     public void setPath(int node) {
-        AStarpath = pathfinder.getShortestPath(getNode(), node, new OctileDistance());
+
+        if(AStarpath != null)
+            if(Graphs.getPathVertexList(AStarpath).contains(node))
+                return;
+            //else uncolorPath(pathToFollow);
+
+        if(useTheta) {
+            thetaPathFind = new ThetaStarShortestPath<>(gameMap.getGraph());
+            ThetaStarpath = thetaPathFind.getShortestPath(new Integer((int) (y * GameMap.WIDTH + x)), new Integer(gameMap.getPlayerNode()), new OctileDistance());
+        }
+        else AStarpath = pathfinder.getShortestPath(getNode(), node, new OctileDistance());
         if (AStarpath == null) return;
         pathToFollow = Graphs.getPathVertexList(AStarpath);
         //pathToFollow.remove(0);
-        colorPath();
+        //colorPath(pathToFollow);
+        if(verbose) report();
         //nextPosition = new Vector2(pathToFollow.get(0) % GameMap.WIDTH, pathToFollow.get(0) / GameMap.WIDTH);
+    }
+
+
+    public void setVerbose(){
+        this.verbose = true;
+        if(useTheta)
+            thetaPathFind.setVerbose();
+        else pathfinder.setVerbose();
+    }
+
+    public void setVerbose(boolean verbose) {
+        this.verbose = verbose;
     }
 
 
@@ -375,6 +392,10 @@ public class Entity {
                     Math.sqrt(2)*Math.min(Math.abs(sourceX - targetX), Math.abs(sourceY - targetY));
         }
     }
+
+
+
+
 
 
 }

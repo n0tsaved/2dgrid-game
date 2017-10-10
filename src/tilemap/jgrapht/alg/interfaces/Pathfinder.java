@@ -10,4 +10,5 @@ public interface Pathfinder<V,E> {
 
     int getNumberOfExpandedNodes();
     long getElapsedTime();
+    void setVerbose();
 }

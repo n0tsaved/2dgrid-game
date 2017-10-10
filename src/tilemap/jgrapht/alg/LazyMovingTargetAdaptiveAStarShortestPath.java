@@ -39,7 +39,7 @@ public class LazyMovingTargetAdaptiveAStarShortestPath<V,E extends DefaultWeight
     private boolean toBeUpdated=false;
     private long elapsedTime = Long.MAX_VALUE;
     private int numberOfExpandedNodes=0;
-    private boolean verbose = true;
+    private boolean verbose = false;
     public LazyMovingTargetAdaptiveAStarShortestPath(SimpleWeightedGraph<V, E> graph) {
         this.graph=graph;
     }
@@ -270,5 +270,10 @@ public class LazyMovingTargetAdaptiveAStarShortestPath<V,E extends DefaultWeight
 
     public long getElapsedTime(){
         return elapsedTime;
+    }
+
+    @Override
+    public void setVerbose() {
+        this.verbose = true;
     }
 }

@@ -38,7 +38,7 @@ public class BidirectionalAStarShortestPath<V,E>  implements Pathfinder<V,E> {
     protected double bestPathLength;
     private long elapsedTime = Long.MAX_VALUE;
 
-    protected boolean verbose = true;
+    protected boolean verbose = false;
 
     public BidirectionalAStarShortestPath(Graph<V, E> graph) {
         if(graph==null)
@@ -254,5 +254,10 @@ public class BidirectionalAStarShortestPath<V,E>  implements Pathfinder<V,E> {
 
     public long getElapsedTime(){
         return elapsedTime;
+    }
+
+    @Override
+    public void setVerbose() {
+        this.verbose = true;
     }
 }

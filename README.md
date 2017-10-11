@@ -52,3 +52,4 @@ The currently available options are:
 -b;--behaviour {chase, evade} (experimental: the user may experience glitches or crashes)
 -h;--help 
 ```
+At this point if you'd like to switch between map type press F2, F3 or F4 respectively for Indoor, Outdoor and a Dungeon map.

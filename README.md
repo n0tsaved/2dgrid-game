@@ -33,7 +33,7 @@ $ cd 2dgrid-game
 Now, to compile the project just run the following:
 
 ```
-$ant -f 2dgrid-game.xml
+$ ant -f 2dgrid-game.xml
 ```
 
 ### Running
